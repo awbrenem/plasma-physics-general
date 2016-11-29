@@ -4,6 +4,7 @@
 ;--------------------------
 ;PLASMA PARAMETERS
 ;SHOCK QUANTITIES
+;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
 ;Plasma drift values
 ;Instability calculations
 ;Dipole field stuff (see dipole.pro)
@@ -16,10 +17,10 @@
 	;Alfven waves (ideal, parallel only)
 	;Ion acoustic waves
 ;Doppler shift plot
-;RELATIVISTIC CYCLOTRON RESONANCE ENERGIES (NEED TO CHOOSE PARTICLE PITCH ANGLE)
+;NONRELATIVISTIC CYCLOTRON RES ENERGIES (NOTE: FOR ANYTHING IN THE
+;		VICINITY OF 100 KEV YOU DEFINITELY NEED TO USE RELATIVISTIC EQNS ABOVE
+;RELATIVISTIC CYCLOTRON RESONANCE ENERGIES
 ;TRANSVERSE RESONANCE ENERGY
-;NONRELATIVISTIC CYCLOTRON RES ENERGIES (NOTE: FOR ANYTHING IN THE 
-;VICINITY OF 100 KEV YOU DEFINITELY NEED TO USE RELATIVISTIC EQNS ABOVE
 ;POYNTING FLUX CALCULATIONS (MONOCHROMATIC, PLANE WAVE)
 ;Radiation calculations
 ;E and B amplitudes
@@ -129,7 +130,7 @@ Farad (F) = A s V-1 = s4 A2 kg-1 m-2
 
 ;--------------------------
 ;CALCULATED VALUES
-	;note that I follow the convention of the NRL formulary:	
+	;note that I follow the convention of the NRL formulary:
 	;Input density in cm-3, B in nT (I convert to gauss in the equations) and temp in eV
 ;--------------------------
 
@@ -140,11 +141,11 @@ fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
 debye = 7.43e2*sqrt(Te)/sqrt(n)/100./1000.           ;Debye length (km) (for e- and ions)
 flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
 flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
-;;flhr3 = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit 
+;;flhr3 = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
 fuh = sqrt(fpe^2 + fce^2)							 ;Upper hybrid res freq (Hz)
 fx = fce/2. + 0.5*sqrt(fce^2 + 4*fpe^2)              ;x-mode frequency (Hz)
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
-pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)     
+pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
 VA = 2.18e11*B*BnT2BG/sqrt(n)/100./1000.             ;H+ Alfven vel (km/s)
 VA2 = fci/fpi*3e5                                    ;Alternate H+ Alfven vel (km/s)
 VAe = VA * sqrt(1836.)                               ;electron Alfven vel (km/sec)
@@ -165,7 +166,7 @@ beta_t = 4.03e-11*n*(Ti+Te)/((B*BnT2BG)^2)     	     ;total beta
 pmag = 0.3979*B^2                                    ;magnetic pressure (pPa) (B must be in nT)
 
 ;I DON'T THINK THIS IS RIGHT. THE VALUE IS MANY ORDERS OF MAG LESS THAN PMAG
-pkin = (100.^3) *n*1.38e-23*Ti*10^12                 ;kinetic pressure in pPa (B in nT, n in cm-3) 
+pkin = (100.^3) *n*1.38e-23*Ti*10^12                 ;kinetic pressure in pPa (B in nT, n in cm-3)
 ;-------------
 ;THIS VALUE TENDS TO BE CLOSE TO PMAG, BUT IT INCLUDES 4% ALPHA PARTICLE CORRECTION
 pkin = nU*1e-3*(1869.6979 + 0.0161082*TiU) ;kinetic pressure
@@ -199,13 +200,38 @@ print,'beta_p = ' + strtrim(beta_p)
 print,'beta_t = ' + strtrim(beta_t)
 
 
+;---------------------------------------------------------------------------------
+;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
+;---------------------------------------------------------------------------------
+
+;Find ratio of B2/B1 = A1/A2.
+
+alt = 70.   ;km
+L = 5.5
+Bo_mageq = 167.  ;nT
+
+.compile ~/Desktop/community/dipole.pro
+dip = dipole(L)
+
+radius = dip.r - 6370.
+
+boo = where(radius le alt)
+boo = boo[0]
+Bo_km = dip.b[boo]
+Bratio = Bo_km/Bo_mageq
+
+;diameter of flux tube at "alt"
+d1 = 100. ;km
+d2 = d1/sqrt(Bratio)
+
+
 
 
 ;---------------------------------------------------------------------------------
 ;SHOCK QUANTITIES
 ;---------------------------------------------------------------------------------
 
-	
+
 	;density (cm-3)
 	;U = upstream
 	;D = downstream
@@ -219,75 +245,75 @@ print,'beta_t = ' + strtrim(beta_t)
 	;velocity and shock normal unit vector (use the same coord for both)
 	vswU = [1,2,3]
 	vswD = [1,2,3]
-	shnorm = [1,1,1]   
-	
+	shnorm = [1,1,1]
+
 	;Magnetic field (nT)
 	BmagU = 20
 	BmagD = 30
-	
+
 	;project into shock normal direction
 	VprojU = vswU*shnorm
 	VprojD = vswD*shnorm
-	
+
 	VprojU_mag = reform(sqrt(VprojU[0]^2 + VprojU[1]^2 + VprojU[2]^2))
 	VprojD_mag = reform(sqrt(VprojD[0]^2 + VprojD[1]^2 + VprojD[2]^2))
-	
+
 	gamae = 1.  ;isothermal
 	gamai = 3.  ;adiabatic
-	
-	
+
+
 	CsU = 9.79d5*sqrt(gamai*TeU)/100./1000.   ;km/s
 	VAU = 2.18d11*BmagU*bnt2bg/sqrt(nU)/100./1000.    ;km/s
 	CmsU = sqrt(VAU^2 + CsU^2)
-	
+
 	CsD = 9.79d5*sqrt(gamai*TeD)/100./1000.   ;km/s
 	VAD = 2.18d11*BmagD*bnt2bg/sqrt(nD)/100./1000.    ;km/s
 	CmsD = sqrt(VAD^2 + CsD^2)
-	
-	
+
+
 	;------------------------------------------
 	print,'Upstream quantities:'
 	print,'Magnetosonic mach # = ',VprojU_mag/CmsU
 	print,'Alfven mach # = ',VprojU_mag/VAU
-	
+
 	print,'Downstream quantities:'
 	print,'Magnetosonic mach # = ',VprojD_mag/CmsD
 	print,'Alfven mach # = ',VprojD_mag/VAD
-	
+
 	print,'For the polytropic index I used gamma_e = ',gamae
 	print,'...and gamma_i = ',gamai
-	
-	print,'Upstream ion beta',4.03e-11*nU*TiU/((BmagU*BnT2BG)^2)          
-	print,'Downstream ion beta',4.03e-11*nD*TiD/((BmagD*BnT2BG)^2)          
-	
-	print,'Upstream e- beta',4.03e-11*nU*TeU/((BmagU*BnT2BG)^2)          
-	print,'Downstream e- beta',4.03e-11*nD*TeD/((BmagD*BnT2BG)^2)          
-	
-	print,'Upstream total beta',4.03e-11*nU*(TiU+TeU)/((BmagU*BnT2BG)^2) 
-	print,'Downstream total beta',4.03e-11*nD*(TiD+TeD)/((BmagD*BnT2BG)^2) 
+
+	print,'Upstream ion beta',4.03e-11*nU*TiU/((BmagU*BnT2BG)^2)
+	print,'Downstream ion beta',4.03e-11*nD*TiD/((BmagD*BnT2BG)^2)
+
+	print,'Upstream e- beta',4.03e-11*nU*TeU/((BmagU*BnT2BG)^2)
+	print,'Downstream e- beta',4.03e-11*nD*TeD/((BmagD*BnT2BG)^2)
+
+	print,'Upstream total beta',4.03e-11*nU*(TiU+TeU)/((BmagU*BnT2BG)^2)
+	print,'Downstream total beta',4.03e-11*nD*(TiD+TeD)/((BmagD*BnT2BG)^2)
 	;-------------------------------------------
-	
-	
-	
+
+
+
 	;relativistic or non-relativistic shock?
 		;cond1
 		val = 1.4d4*sqrt(n)/Bmag_nt     ;Eqn 1 in Treumann09 shock bible
 		;if val >> MA then shock is non-relativistic
 		;cond2
 		;T << 0.511 MeV
-	
-	
+
+
 	Mc_max = 2.76   ;eqn29 Treumann09 (largest critical mach number. See Fig2 in this paper
 					;for Mc as a function of theta_bn and beta)
-	
+
 
 	;-------------
 	;Thickness of quasi-perp laminar bow shock (Russell82, eqn1; Galeev76)
 	;Value should typically be ~1 ion inertial length for this type of shock.
-	;Note that this may not apply to supercritical shocks. 
-	
+	;Note that this may not apply to supercritical shocks.
+
 	Mms = VprojU_mag/CmsU
-	betaU_e = 4.03e-11*nU*TeU/((BmagU*BnT2BG)^2)    
+	betaU_e = 4.03e-11*nU*TeU/((BmagU*BnT2BG)^2)
 	Lsh = ion_inertial*(me/mi)^0.25 * (Mms^2 - 1)/sqrt(betaU_e)
 	;-------------
 
@@ -304,7 +330,7 @@ print,'beta_t = ' + strtrim(beta_t)
 	B = 1700.  ;Bo in nT
 	keV = 100. ;electron energy
 	mlt_extent = 1    ;hours
-	
+
 	Td = 60. * 56.*(r/5)^2 * (B/100.) * (1/keV) * (mlt_extent/24.)  ;minutes
 
 
@@ -313,7 +339,7 @@ print,'beta_t = ' + strtrim(beta_t)
 	Emag = 5.    ;(mV/m)
 	Bmag = 150.    ;(nT)
 	angle = 90.
-	
+
 	Ve = sin(angle*!dtor)*1000*Emag/Bmag
 
 	;-------------------
@@ -321,16 +347,16 @@ print,'beta_t = ' + strtrim(beta_t)
 	m = me       ;mass (kg)
 	q = e        ;charge (C)
 	Bmag = 10.   ;(nT)
-	
+
 	;now enter either perp velocity or perp energy of gyrating particle
 		vperp = xxx  ;Perp velocity of particle (km/s)
-		Wperp = 0.5*m*vperp^2  
-	
+		Wperp = 0.5*m*vperp^2
+
 	angle = 0.   ;angle b/t Bo and grad-B (deg)
 	L = 10  ;gradient scale size (km)
 
 	Vgb = Wperp*sin(angle*!dtor)/(q*Bmag*L)
-	
+
 
 	;-------------------
 	;Curvature drift (km/s)  [2*Wpar * (rc x B)/(q*Rc*B^2)]
@@ -350,9 +376,9 @@ print,'beta_t = ' + strtrim(beta_t)
 	;Method 2 (Rc x B)
 	Rc = xx      ;Radius of curvature (optional - for Vc2 calculation)
 	Vc2 = 2*Wpar/(q*B*Rc)*sin(angle*!dtor)
-	
+
 	Vc = Vc1
- 
+
 	;-------------------
 	;Polarization drift (km/s)
 	m = me         ;mass (kg)
@@ -364,8 +390,8 @@ print,'beta_t = ' + strtrim(beta_t)
 	angle_EB =     ;angle b/t ExB drift and Bo
 	angle_gb_B     ;angle b/t grad-B drift and Bo
 	angle_cB =     ;angle b/t curvature drift and Bo
-	
-	
+
+
 	Vp = -m/(q*Bmag^2)*((Ve*Bmag*sin(angle_EB)/t_EB) + (Vgb*Bmag*sin(angle_gb_B)/t_gb_B) + (Vc*Bmag*sin(angle_cB)/t_cB))
 
 
@@ -391,56 +417,56 @@ print,'beta_t = ' + strtrim(beta_t)
 	k = 0.05*1000.  ;1/km
 
 	;Buneman
-	
+
 		;-  important for wpe>>wce (unmagnetized e- and ions generally, or magnetized
 		;       electrons (Hall current) and unmagnetized ions)
-	
+
 		wr = 0.5*(me/(2*mi))^0.333 * wpe
 		km = wpe/Vd
-	
+
 	;(electron current driven) Ion acoustic
-	
+
 		;-  kpar mostly
 		;-  Vd/Ve >= Ti/Te
-	
+
 		;for k*Debye << 1
-			wr = k*Cs   
-		
+			wr = k*Cs
+
 		;max growth occurs for:
 			wr = wpi/sqrt(3)
 			km = (1/sqrt(2))/Debye
 			wi = (1/3.)*sqrt((!pi/6.)*(me/mi))*Vd*wpi/Cs
 			coll_freq = 10d-2*(Te/Ti)*(Vd/Ve)*wpe   ;effective resistivity
-	
-	
+
+
 	;Beam cyclotron (e- current driven ion cyclotron instability)
-	
+
 		;-  Threshold given by  Vd > max(Cs, wce/wpe * Ve)
-		;-  Tends to stabilize by even small Bo inhomogeneities. 
+		;-  Tends to stabilize by even small Bo inhomogeneities.
 		;-  Provides little resistivity unless Vd -> Ve. May see waves but unlikely to
 		;		be important.
-	
+
 		;-  For cold ions (Vi << Vd) max growth occurs for:
 			km = (1/sqrt(2))/Debye
 			wr = km*(Vd + Cs)
 			wi = sqrt((!pi/18.)*(me/mi))*Vd*wpe/Cs
 			coll_freq = 10d-2*(Vd/Ve)^3*wce   ;effective resistivity
-	
+
 	;Modified two stream instability
-	
+
 		;-  Almost identical to LHDI except this one doesn't need grad-n
 		;-  Can exist where Ti >= Te
 		;-  Insensitive to Te/Ti
 		;-  kpar/kperp = sqrt(me/mi)
 		;-  should be important in space shocks
-	
+
 			wr = wlh
-			k = 1/sqrt(pe*pi)   
+			k = 1/sqrt(pe*pi)
 			coll_freq = 0.1*wlh
 
 
 	;ECDI
-	
+
 		;Forslund72 instability condition (Eqn15)
 		;Vd/Ve ge val
 		;theta = angle b/t k and Vd
@@ -469,7 +495,7 @@ dz2 = SMz[*,2]
 mlat = atan(dz2,dr2)/!dtor
 
 
-;MLT (I think this is technically calculated from GSM but GSE, GSM and SM give nearly 
+;MLT (I think this is technically calculated from GSM but GSE, GSM and SM give nearly
 ;identical values...within 0.1 deg)
 angle_tmp = atan(pos_gse_a.y[*,1],pos_gse_a.y[*,0])/!dtor
 goo = where(angle_tmp lt 0.)
@@ -481,17 +507,17 @@ if goo[0] ne -1 then angle_rad_a[goo] = angle_rad_a[goo] - 24
 
 
 
-	;Create a structure with info along the entire length of a field line 
-	;(From Kris's dipole.pro) returns a structure with the colatitude, field 
+	;Create a structure with info along the entire length of a field line
+	;(From Kris's dipole.pro) returns a structure with the colatitude, field
 	;line length, and magnetic field magnitude along a field line defined by input L value
 
-	L=2
+	L=4.8
 	RE=6378.d ; earth radius [km]
 	bsurf=30000.d ; equatorial surface field [nT]
-	
+
 	lambda=dindgen(9000)/100. ; colatitude [degrees]
 	lambdarad=lambda*!dpi/180.d
-	
+
 	; arcsinh(x) = ln(x+sqrt(1+x^2))
 	x=sqrt(3)*sin(lambdarad)
 	s=RE*L/(2.*sqrt(3.))*(alog(x+sqrt(1.+x^2.)) + x*sqrt(x^2+1))
@@ -502,15 +528,15 @@ if goo[0] ne -1 then angle_rad_a[goo] = angle_rad_a[goo] - 24
 	s=s[goodindex]   ;arc length (last value is field line half-length)
 	lambda=lambda[goodindex]
 	lambdarad=lambdarad[goodindex]
-	
+
 	B=bsurf/(L^3.)*sqrt(1+x^2)/(cos(lambdarad)^6.)
 
 	;another eq for Bo dipole
 	Beq = 3.11d4  ;nT
 	Bo = Beq*sqrt(1+3*cos(theta)^2)/r^3
-	
+
 	fce=.028d*b ; fce [kHz] for B [nT]
-	
+
 	struct={colat:lambda,r:r,s:s,B:B,fce:fce}
 
 	plot,struct.R/6370.,struct.colat*!dtor,/polar
@@ -559,15 +585,15 @@ y_sm = rad*sin(colat*!dtor)*sin(smLong*!dtor)
 z_sm = rad*cos(colat*!dtor)
 
 
-;---field strength at magnetic equator Bo=0.34 Gauss 
+;---field strength at magnetic equator Bo=0.34 Gauss
 Bo=0.34 ;constant
-Re=1.   ;Earth's radius 
+Re=1.   ;Earth's radius
 req=3.1  ;L-shell at equator
 Br = Bo*Re^3/req^3
 ;--equatorial radius at particular field strength
 Req = (2000*30.4/Bnt2Bg)^0.3333
 ;determine field line of depending on value of fce
-;Nose whistler (fastest vg freq) is at 0.25fce for homogeneous medium. 
+;Nose whistler (fastest vg freq) is at 0.25fce for homogeneous medium.
 
 
 
@@ -577,15 +603,34 @@ Req = (2000*30.4/Bnt2Bg)^0.3333
 Rc = L/3. * sin((90-mlat)*!dtor)*(1+3*cos((90-mlat)*!dtor)^2)^(3/2.)/(1+cos((90-mlat)*!dtor)^2)
 
 ;---Ratio of perp to parallel e- velocities in dipole field (Hamlin61)
-pa = 85d ;equatorial particle pitch angle
+pa = 50d ;equatorial particle pitch angle
 mlat = 20d
 mu = sin(pa*!dtor)
-mu2 = mu^2  
+mu2 = mu^2
 B2Bo = (1+3*cos((90-mlat)*!dtor)^0.5)/(sin((90-mlat)*!dtor)^6)
 vper2vpar = mu2 * B2Bo/(1-B2Bo*mu2)  ;NOTE THAT NEGATIVE VALUES MEAN THAT THE PARTICLE HAS REFLECTED
 
-;---magnetic latitude of turning point (approximation from Hamlin61. Note that approximation (Fig2) is quite accurate)
+
+;---magnetic latitude of turning (mirror) point (approximation from Hamlin61. Note that approximation (Fig2) is quite accurate)
+;---VERSION 1 (find mlat where particle of certain equatorial PA will mirror)
+;---Even though VERSION 2 asks for L-value, this is only to find Bo/Bmirror(mlat). this
+;---ratio is actually L-independent
+pa = 10d ;equatorial particle pitch angle
+mu = sin(pa*!dtor)
 mlat_turn = 90. - asin(mu^0.25)/!dtor
+print,mlat_turn
+;---Gurnett's equation for turning point (mirror point)
+;---VERSION 2 (find equatorial pitch angle particle must have to mirror at certain mlat)
+.compile /Users/aaronbreneman/Desktop/code/Aaron/IDL/analysis/dipole.pro
+L = 5  ;dummy value. Bo/Bmirror(mlat) is L-value independent
+dip = dipole(L)
+
+mlat_mirror = 49.8
+goo = where(dip.colat ge mlat_mirror)
+Bmirror = dip.B[goo[0]]
+Bo = min(dip.B)
+pa_max = asin(sqrt(Bo/Bmirror))/!dtor
+print,pa_max
 
 
 ;-----------------------------------------------------------------------------------------------
@@ -620,7 +665,7 @@ theta = 90. - mlat  ;colat
 
 ;---dipole field in SM spherical coord (Kivelson and Russell pg 165)
 Br = (1d3)*2*M*cos(!dtor*theta)/R^3   ;in nT
-Btheta = (1d3)*M*sin(!dtor*theta)/R^3 
+Btheta = (1d3)*M*sin(!dtor*theta)/R^3
 Btots = (1d3)*(M/R^3)*(1 + 3*cos(!dtor*theta)^2)^0.5  ;nT
 
 ;fce(mlat,R) for dipole field (Helliwell65 pg 181)
@@ -644,7 +689,7 @@ fce_eq = fc0*cos(lat_foot*!dtor)^6
 ;--------------------------------------------------
 
 ;sin(alpha)^2 = Bo/Bmax    ;Gurnett eqn 3.4.23
-alpha = asin(sqrt(Bo/Bmax))/!dtor    
+alpha = asin(sqrt(Bo/Bmax))/!dtor
 
 bdip = dipole(5.)
 
@@ -666,20 +711,20 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 ;EARTH'S DENSITY PROFILE
 ;-----------------------
 
-	;Here's a very simple equatorial PS density model assuming that density 
+	;Here's a very simple equatorial PS density model assuming that density
 	;falls off as 1/r^3 (Helliwell65 p 191,196)
-	No = 10000. 
+	No = 10000.
 	N = No/(L/1.)^3  ;1/cm^3    ;THESE VALUES SEEM WAY TOO LOW
-		
+
 	;inner ps equatorial profile 2.24<L<Lppi from Carpenter and Anderson
 	t1 = -0.3145*L + 3.9043
 	t2 = -0.35*exp(-0.5/1.5)
 	N = 10^(t1+t2)
-	
+
 	;e- density profile up to 90 km (Wait and Spies64)  -> also see Rodger and Nunn99
 	;For higher altitude models use the IRI.
 	n = 1.4265d13*exp(-0.15*h)*exp((bet-0.15)*(z-h_prime))
-	
+
 
 
 
@@ -689,7 +734,7 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 
 	P=1-(fpe^2/f^2)-(fpi^2/f^2)
 	S=1-(fpe^2/(f^2-fce^2))-(fpi^2/(f^2-fci^2))
-	
+
 	theta_res = atan(sqrt(-1*P/S)) * 180/!pi
 
 ;--------------------
@@ -700,8 +745,8 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	;WHISTLERS (electrons only)
 	;----------------------------
 
-		f=1000.  ;Hz 
-		fpe = 8980.*sqrt(30) 
+		f=1000.  ;Hz
+		fpe = 8980.*sqrt(30)
 		fce = 28.*100.
 		thet = 0.
 		c=3e5
@@ -715,23 +760,23 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 		Bw = 1000.*Ew/vphase ;vphase in km/sec
 		;in terms of vectors (not sure about units here)
 		Bw_vec = c/(2*!pi*f)*(crossp(kvec,Ew_vec))
-		
-		
+
+
 		Ew = Bw*f*ckm/1000./sqrt(f*fce^2/(fce-f))
-		
-		
+
+
 		;------------------
 		;QL WAVE DIFFUSION STUFF
-		;the energy and pitch angle diffusion rates in QL diffusion scale as SB=Bw^2 
+		;the energy and pitch angle diffusion rates in QL diffusion scale as SB=Bw^2
 		;(magnetic power spectral density)
 		;See Meredith04,07, Kennel and Engelmann66, Bell84
 		;Sb=Bw^2 in nT^2
 		;Se=Ew^2 in (mV/m)^2
 		;For FA whistlers only!!!!!
 		Sb = Se*1d6*fce^2/f/(ckm^2)/(fce-f) ;proportional to energy/pitch-angle diffusion rates
-	
+
 		;---Helliwell's angles for determining whistler trapping ("Theory of whistlers" pg. 49)
-	
+
 	;	frat = 0.04     ;f/fce ratio
 	;	frat = 0.14
 		frat = 10/347.
@@ -740,53 +785,53 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 		theta_2 = acos(2*frat)/!dtor ;Gendrin angle
 		theta_3 = acos(frat/(1-frat))/!dtor
 		theta_4 = acos(frat)/!dtor  ;resonance cone angle
-	
+
 		;crest/trough enhancement eq 3.39 (for crest n2>n1; for trough n1>n2)
 		n1_2_n2=(cos(!dtor*theta_0)-frat)/(cos(!dtor*theta_0)^2 * (1-frat))
 		;tough enhancement eq 3.44
 		nmax2nmin=(cos(!dtor*theta_0))/(4*frat*(cos(!dtor*theta_0)-frat))
-	
+
 		;---find nose freq based on sc L-value (req)
 		req = 1.4
 		fnose = (0.34/req^3)*(28/(4.*bnt2bg))
-	
-	
+
+
 		;whistler group velocity from vgroup.pro (km/s)
 		;Equation for group velocity from Helliwell65 p30,31.
-		;"Equation describes the propagation of a beat between two infinite plane waves of 
+		;"Equation describes the propagation of a beat between two infinite plane waves of
 		;slightly different frequency whose wave-normal directions are the same"
-		
+
 		;Note that for f<0.5fce the group velocity is faster than phase velocity.
 		Vg = 2*c*sqrt(f)*(fce*cos(theta_kb*!dtor)-f)^(3/2.)/(fpe*fce*cos(theta_kb*!dtor))
-	
+
 		;parallel component of Ew (to Bo) - Omura09 eqn42
-		epsilon = sqrt(f*(fce - f)/fpe^2)	
+		epsilon = sqrt(f*(fce - f)/fpe^2)
 		delta = 1/(1 + epsilon^2)             ;in terms of freq
 		Ew_par = f*sin(theta_kb*!dtor)*Ew/(delta^2 * fce - f) ;Ew is the component in transverse plane (Ex-stix)
-	
-	
+
+
 		;Whistler electric field polarizations (Stix coord)
 		Ez = Ex * n^2*cos(th)*sin(th)/(n^2*sin(th)^2 - P)
 		Ey = Ex * D/(n^2 - S)
-	
+
 		;another formulation - from eqn6 "Properties of obliquely propagating chorus", 2010
-					;Olga P. Verkhoglyadova,1,2 Bruce T. Tsurutani,1 and Gurbax S. Lakhina3 
-		
+					;Olga P. Verkhoglyadova,1,2 Bruce T. Tsurutani,1 and Gurbax S. Lakhina3
+
 		num = 2*!pi*freq*sin(theta)*cos(theta)/(2*!pi*fc*cos(theta)-2*!pi*freq)
 		den	= = 1 + 2*!pi*freq*sin(theta)^2/(2*!pi*fc*cos(theta)-2*!pi*freq)
 		Ez2Ex = num/den
-	
-	
-	
+
+
+
 		;Whistler magnetic field polarizations (Stix coord) - see Verkhoglyadova and Tsurutani 2009
 		a1_num = w^2*wpe^2/c^2/(w^2-wce^2) + k^2
 		a1_den = w*wpe^2*wce/c^2/(w^2-wce^2)
 		A1 = -1*a1_num/a1_den
-		
+
 		a2_num = wpe^2/c^2 + kperp^2
 		a2_den = kperp*kpar
 		A2 = a2_num/a2_den
-		
+
 		Bx = -kpar/kperp * Bz
 		Bx = kpar*By/A1/(kpar - kperp/A2)
 
@@ -797,17 +842,17 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 
 
 		;theta is the wavenormal angle of the incident EM whistler
-	
-	
-		f = 21400. 
+
+
+		f = 21400.
 		fce = 731000.
-		fpe = 1889000. 
+		fpe = 1889000.
 		flhr = 11580.
 		theta = indgen(90)
-	
+
 		nx = (fpe*sqrt(fce*cos(!dtor*theta)))/(sqrt(f*(f^2-flhr^2)))
 		lambda = c/(nx*f)
-	
+
 
 	;----------------------------
 	;EMIC (parallel only)
@@ -818,35 +863,35 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 		B = 10000. ;nT
 		BG = B*BnT2BG  ;Gauss
 		VA = 2.18e11*BG/sqrt(n)/100.  ;Alfven speed m/s
-	
+
 		f = 200d  ;Hz
 		fpe = 8980*sqrt(n)
 		fpi = fpe/43.
 		fce = 28*B
 		fci = fce/1836.
-	
+
 		c1 = 4*!pi*!pi/c^2
 		k = sqrt(c1*(1-(fpe^2 + fpi^2)/((f+fce)*(f-fci))))  ;1/m
 		lambda = 2*!pi/k   ;m
 
 
 	;---------------------
-	;EIC  
+	;EIC
 	;---------------------
 
 	;	w^2 = wce^2 + k^2*vs^2
-		
+
 		c = 3e8   ;light speed
 		n = 50000. ;cm^-3
 		B = 10000. ;nT
 		BG = B*BnT2BG  ;Gauss
-	
+
 		f = 200d  ;Hz
 		fpe = 8980*sqrt(n)
 		fpi = fpe/43.
 		fce = 28*B
 		fci = fce/1836.
-		
+
 		w = 2*!pi*f
 		wci = 2*!pi*fci
 		gama_e = 1  ;isothermal e-
@@ -857,21 +902,21 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 		Ti = 2000.   ;K
 		M = 1.6d-27
 		Z = 1
-	
+
 		vs = sqrt(gama_e*kb*Te + gama_i*Z*kb*Ti)/sqrt(M)   ;m/s
-		
+
 		k = sqrt((w^2 - wci^2)/(vs^2))     ;1/m
 		lambda = 2*!pi/k                 ;m
-		
+
 		print,lambda
-	
+
 
 
 	;------------------------------
 	;Alfven waves (ideal, parallel only)
 	;--------------------------------
 	;ka = sqrt(4*!pi*!pi*f^2/VA^2)
-	
+
 		ka = f*2*!pi*sqrt(1+(VA^2/c^2))/VA
 		lambda_a = 2*!pi/ka
 		theta = 90*!dtor
@@ -891,9 +936,9 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 		M = 1.67d-27  ;ion mass
 		;sound velocity
 		Cs = sqrt((gamma_e*kb*Te + Z*gamma_i*kb*Ti)/M)
-	
-		w = 2*!pi*21400.	
-		;IAWs are dispersionless so w = vs*k 
+
+		w = 2*!pi*21400.
+		;IAWs are dispersionless so w = vs*k
 		k = w/Cs    ;1/m
 		lambda = 2*!pi/k
 
@@ -923,7 +968,7 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 					;Crawford 65 shows the dispersion curves for wpe/wce=infinity, which
 					;is a good approximation for the bow shock (assumes a Maxwellian
 					;transverse e- velocity distribution)
-					
+
 					;Every harmonic must have a doubled value of k. Here's why:
 					;The phase velocity of each harmonic will be the same. Because
 					;the freq doubles so must k
@@ -952,7 +997,7 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	print,'k = ' + strtrim(k,2) + ' 1/m' + ' --> wave vector mag for whistler wave in sc frame'
 	print,'fwave = ' + strtrim(fwave,2) + ' Hz --> freq in wave frame'
 	plot,DSS,xtitle = 'Theta (degrees) -- theta res (cold plasma) = ' + strtrim(theta_res,2),ytitle='Doppler shift freq (Hz)'
-	
+
 	device,decomposed=0
 	loadct,39
 	thetas_10Hz = acos(10/k/indgen(1000)/1000.)*180/!pi
@@ -968,16 +1013,16 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	oplot,thetas_70Hz,color=165
 	oplot,thetas_90Hz,color=135
 	oplot,thetas_110Hz,color=105
-	
+
 	;--------Range of possible k-values-----------
 	;This is equation 4 from Coroniti82. When the conditions w'<<wce*cos(theta_k) and k'=kc/wp<<1 are satisfied
 	;then this equation can be used. The limiting values are: k1, the max red-shifted value and k2, the blue-shifted value
 	;theta_k can be estimated with cold_dispersion_loop.pro which plots the wave normal angles for all reasonable
-	;wave freqs in SW frame. How well this works depends on how small the range of possible theta_k values is 
-	;because, among other things, I use this to calculate delta_kv. 
-	
+	;wave freqs in SW frame. How well this works depends on how small the range of possible theta_k values is
+	;because, among other things, I use this to calculate delta_kv.
+
 	delta_kv = 45.   ;angle b/t Vsw and k
-	
+
 	t1 = vsw*abs(cos(delta_kv*!dtor))/2./vae/abs(cos(theta_k*!dtor))
 	t2 = vsw^2*cos(delta_kv*!dtor)^2/4./vae^2/cos(theta_k*!dtor)^2
 	t3 = f/fce/abs(cos(theta_k*!dtor))
@@ -986,86 +1031,88 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	k2p = -1*t1 + sqrt(t2 + t3)
 	k2 = k2p*fpe*2*!pi/c/1e-3   ;blue-shifted
 
-;-------------------------------------------------------------------------------
-;RELATIVISTIC CYCLOTRON RESONANCE ENERGIES (NEED TO CHOOSE PARTICLE PITCH ANGLE)
-;-------------------------------------------------------------------------------
-
-	;freq in Hz
-	;all distances in meters
-	
-	
-	pa = 0.  ;test pitch angle in deg
-	theta_k = 20.0  ;wave normal angle
-	freq = 8000.
-	fce = 68000.
-	fpe = 17000.
-	c=3d8
-	kvec = sqrt(4*!pi^2*fpe^2*freq/(c^2*(fce*cos(theta_k*!dtor)-freq)))
-	;kvec = 1./1000.   ;1/m
-	
-	kz = abs((kvec)*cos(theta_k*!dtor))
-	
-	;test velocities
-	vz = indgen(10000)*c/9999. * cos(pa*!dtor)
-	
-	gama = 1/sqrt(1-(vz/c/cos(pa*!dtor))^2)  ;relativistic gamma factor
-	
-	f1cycl = vz
-	f2cycl = (2*!pi/kz)*(1*fce/gama - freq)
-	
-	
-	diff = abs(f1cycl-f2cycl)
-	tmp = min(diff,val)
-	
-	vz_cycl = vz[val]   ;m/s
-	vtots_cycl = vz_cycl/cos(pa*!dtor)  ;electron velocity
-	vc_ratio_cycl = vtots_cycl/c
-	if vc_ratio_cycl ge 0.1 then relativistic_cycl = 'yes' else relativistic_cycl = 'no'
-	;------------------------------------------------
-	;anomalous resonance energy
-	f1anom = -1*vz
-	f2anom = (2*!pi/kz)*(-1*fce/gama - freq)
-	diff = abs(f1anom-f2anom)
-	tmp = min(diff,val)
-	
-	vz_anom = vz[val]   ;m/s
-	vtots_anom = vz_anom/cos(pa*!dtor)  ;ion velocity
-	vc_ratio_anom = vtots_anom/c
-	if vc_ratio_anom ge 0.1 then relativistic_anom = 'yes' else relativistic_anom = 'no'
-	;-----------------------------------------------
-	;landau resonance energy
-	vz_landau = 2*!pi*freq/kz
-	vtots_landau = vz_landau/cos(pa*!dtor)
-	vc_ratio_landau = vtots_landau/c
-	if vc_ratio_landau ge 0.1 then relativistic_landau = 'yes' else relativistic_landau = 'no'
-	 
-	
-	;Relativistic energy in eV (e.g. p37 in "Modern Physics, 2nd edition")
-	Etots_cycl = 0.511d6/sqrt(1-(vtots_cycl^2/c^2)) - 0.511d6
-	Etots_anom = 0.511d6/sqrt(1-(vtots_anom^2/c^2)) - 0.511d6
-	Etots_landau = 0.511d6/sqrt(1-(vtots_landau^2/c^2)) - 0.511d6
-	
-	Ez_cycl = 0.511d6/sqrt(1-(vz_cycl^2/c^2)) - 0.511d6
-	Ez_anom = 0.511d6/sqrt(1-(vz_anom^2/c^2)) - 0.511d6
-	Ez_landau = 0.511d6/sqrt(1-(vz_landau^2/c^2)) - 0.511d6
 
 
+
+;---------------------------------------------------------------------
+;Non-Relativistic cyclotron resonance energy in terms of Bo, dens, f, fce
+;---------------------------------------------------------------------
+
+;Key
+;fq = frequency  (Hz)
+;density in units of cm-3
+
+	fce = fq/f_fce
+
+
+	Bo = fq/(28.*f_fce)/1d9   ;in Teslas
+	;convert to Gauss
+	Bo = Bo*10000.
+	;Square This
+	Bo2 = Bo^2 ;units of g/cm/s^2
+	;divide by 1000 to get to kg
+	Bo2 = Bo2/1000.
+
+	Bo2_N = Bo2/dens   ;units of g*cm^2/s^2
+	;convert to kg
+	Bo2_N = Bo2_N/1000.
+	;convert to m^2
+	Bo2_N = Bo2_N/100./100.   ;units of kg*m^2/s^2 = N*m = J
+
+	Bo2_N_eV = Bo2_N*1.6d19
+	Bo2_N_keV = Bo2_N_eV/1000.
+
+	;multiply by the unitless stuff
+	nres = 1.   ;cyclotron resonance number
+	;non-relativistic version
+	Ec_1_keV = nres^2 * Bo2_N_keV * (fce/fq)/cos(theta_kb*!dtor)/8./!pi
+
+
+
+	;--------------------------------------------------------
+	;Relativistic cyclotron resonance energy
+	;--------------------------------------------------------
+
+	freq = 1700.   ;Hz
+	theta_kb = 30.
+	pa = 5.
+	fce = 28.*167
+	kmag = 0.1  ;1/km
+	nres = 1   ;cyclotron harmonic (absolute value)
+
+	evals = cycl_energies(freq,theta_kb,pa,fce,kmag,nres)
+
+
+
+
+;----------------------------
+;MINIMUM LANDAU RESONANCE ENERGY (CALCULATION 2)  (Min14 eqn3, Agapitov15 eqn1)
+;e- must be at least this energy to resonate via Landau resonance
+;----------------------------
+
+me_ev  = 0.51d6       ; -Electron mass in eV/c^2
+c2 = 1  ;cancels out from me_ev
+
+E_landau_v2 = 0.5*me_ev*c2*((fce^2)/(fpe^2))*(freq/fce)*(cos(theta_k*!dtor)-(freq/fce))*(1/(cos(theta_k*!dtor)^2))
+
+print,Ez_landau
+print,E_landau_v2
 
 
 ;----------------------------
 ;TRANSVERSE RESONANCE ENERGY
 ;----------------------------
 
-	;This occurs for waves whose perp wavelength is less than or equal to the gyroradius. 
+	;This occurs for waves whose perp wavelength is less than or equal to the gyroradius.
 	;The condition to be satisfied is  w~k_perp*v_perp
 	;Lower hybrid waves can resonate with high energy ions this way. (See Bell et al., 2004 - CLUSTER....)
-	
-        f = 5000.
-        kperp = 2.*!pi/400.
+
+  f = 5000.
+  kperp = 2.*!pi/400.
 
 
 	vperp = 2*!pi*f/kperp   ;perp velocity. k in 1/m, f in Hz
-	
+
 	;relativistic energy in eV
 	E_trans_electron = me_ev/sqrt(1-(vperp^2/c^2)) - me_ev
 	E_trans_proton = mp_ev/sqrt(1-(vperp^2/c^2)) - mp_ev
@@ -1073,7 +1120,7 @@ alpha_3 = asin(sqrt(0.02))/!dtor
         print,E_trans_proton/1000.  ;keV
 
 ;----------------------------------------------------------------------------------------------------------------------------------------
-;NONRELATIVISTIC CYCLOTRON RES ENERGIES (NOTE: FOR ANYTHING IN THE 
+;NONRELATIVISTIC CYCLOTRON RES ENERGIES (NOTE: FOR ANYTHING IN THE
 ;VICINITY OF 100 KEV YOU DEFINITELY NEED TO USE RELATIVISTIC EQNS ABOVE
 ;----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1085,21 +1132,21 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	;Vlandau = sqrt(2*qq*Elandau/me)/1000.                ;km/s
 	;Ecycl = mepp/k_unitless^2/(cos(theta_k*!dtor)^2)/e1ev  ;eV (only for w<<wce) (KennelandPetschek66)
 	;Vcycl = sqrt(2.*qq*Ecycl/me)/1000.                    ;km/sec
-	
-	
-	
-	
+
+
+
+
 	;2) IN TERMS OF FREQ, k
 	;NOTE THAT THE CYCL RES ENERGY EQUATION FROM KENNEL66 IS WRONG (K SHOULD BE OUTSIDE OF THE PARENTHESIS AND IN THE DENOMINATOR)
 	kvec = kvec/1000.
-	;The below equations come from solving for v_par in the Doppler shifted resonance condition. 
+	;The below equations come from solving for v_par in the Doppler shifted resonance condition.
 	;See Gurnett p 9-19
 	Ecycl = 0.5*me*4*!pi^2 * (f - fce)^2/(kvec*cos(theta_k*!dtor))^2/e1ev  ;eV
 	Eanom = 0.5*me*4*!pi^2 * (f + fce)^2/(kvec*cos(theta_k*!dtor))^2/e1ev  ;eV
 	Elandau = 0.5*me*4*!pi^2*(f)^2/(kvec*cos(theta_k*!dtor))^2/e1ev        ;eV
-	
+
 	vcycl = 2*!pi*(f-fce)/((kvect)*cos(theta_k*!dtor))   ;m/s
-	
+
 	;Check to make sure that the velocities are not relativistic
 	if vcycl/c ge 0.9 then Ecycl = !values.f_nan & Eanom = !values.f_nan
 
@@ -1121,9 +1168,9 @@ if plot_theta_k eq 'yes' then begin
 		tan2=-1*vals.cp_params.P*(n2-vals.cp_params.R)*(n2-vals.cp_params.L)/((vals.cp_params.S*n2-vals.cp_params.R*vals.cp_params.L)*(n2-vals.cp_params.P))		& $
 		tan=sqrt(tan2)									& $
 		theta=atan(tan)									& $
-		thetadeg_tmp[i]=(360./6.283)*theta				
-;	endfor 
-	
+		thetadeg_tmp[i]=(360./6.283)*theta
+;	endfor
+
 	oplot,epol_tmp,thetadeg_tmp
 endif
 
@@ -1154,12 +1201,12 @@ endif
 	b=2.9e-3  ;Wien's displacement constant (m*K)
 	;Tbb=5800.   ;Blackbody temp (K)
 	Tbb=1e6
-	
+
 	lambda_max = 1e9*b/Tbb 		;wavelength of max radiation (nm)
 	fmax = 1e9*c/lambda_max		;freq of max radiation (Hz)
 	Emax=h*fmax					;energy (eV)
-	
-	
+
+
 	lambda_max = 1e-9  ;x-rays
 	;lambda_max = 1e-12 ;gamma rays
 	;lambda_max = 1e-13 ;cosmic rays
@@ -1171,40 +1218,40 @@ endif
 ;------------------------------
 
 	;Assuming a plane wave, k=kz, Bz=0 we get the simple relation:
-	;Ey=w/k * Bx  in SI units. E is in V/m and B is in T. 
-	
-	
+	;Ey=w/k * Bx  in SI units. E is in V/m and B is in T.
+
+
 	freq=100.  ;Hz
 	k=0.0125  ;1/km --> appropriate for DS=5 Hz and vsw = 400 km/s
 	k=k/1000. ;1/m
 	BnT = 0.1  ;nT
-	
+
 	Eamp = 1000.*2.*!pi*freq/k  * BnT/1e9   ; in mV/m
-	
-	;More generally the equation is E=(w*Bd)/(k*sin(d)), where d is the angle b/t k and E, and Bd is the 
-	;projection of B in the kxE direction. k is no longer necessarily along Bo. 
-	
+
+	;More generally the equation is E=(w*Bd)/(k*sin(d)), where d is the angle b/t k and E, and Bd is the
+	;projection of B in the kxE direction. k is no longer necessarily along Bo.
+
 	d = 5.
-	
+
 	Eamp2 = 1000.*2.*!pi*freq/k  * BnT/1e9/sin(!dtor*d)   ; in mV/m
-	
+
 	;Calculate phase velocity from this
 	Vp = (Eamp2/1000.)/(BnT/1e9)/1000.   ;km/sec
-	
+
 	;Plot E vs d assuming minimal Doppler-shift
 	;f~fobs
 	alpha = 1000.*2.*!pi*freq * BnT/1e9   ;constant
 	vsw = 400.*1000.  ;b/c k is in 1/m in the Eamp2 equation
 	DS_max = 5.  ;max DS (Hz)
 	k_max = 2*!pi*DS_max/vsw
-	
+
 	;The inequality is...
-	;E(d) >= vsw*alpha/DS_max/sin(d) 
-	
+	;E(d) >= vsw*alpha/DS_max/sin(d)
+
 	d = indgen(90)
-	
+
 	Emin = vsw*alpha/DS_max/sin(!dtor*d)
-	
+
 
 ;-----------------------
 ;ATMOSPHERIC STUFF.....
@@ -1214,21 +1261,21 @@ endif
 	;------------------------
 	;LIGHTNING CALCULATIONS
 	;------------------------
-	
+
 		;Peak of lightning amplitude angle for radiation field for a given altitude (Rowland98)
 		theta_max = 0.5*acos(b^2/(2-b^2))
-		
+
 		;Lightning current as a function of time (Cho and Rycroft98)
 		xxx
-		
+
 		;Electric field from dipole radiator (Kelley90)
-		E = THETA*p/(4*!pi*e_o*r^3) * (2*cos(theta) + sin(theta))  ;warning, don't use this without looking it up. It is a 
+		E = THETA*p/(4*!pi*e_o*r^3) * (2*cos(theta) + sin(theta))  ;warning, don't use this without looking it up. It is a
 																	;function of both r and theta (colat).
 																   ;THETA = joule extinction effects.
-		
+
 		;e- density perturbation due to EMP (Moore03) -> also see Inan91, Cheng and Cummer05
 		dn = A1*exp(-(h-h1)/sigma1)^2 - A2*exp(-(h-h2)/sigma2)^2
-		
+
 		;Nondeviative absorption coefficient (dB/km) (Davies90)
 		K1 = 4.6d4 * (n_z*v_z)/((w+w_L)^2 + v_z^2)
 		K2 = 4.6d4 * (n_z*v_z)/((w-w_L)^2 + v_z^2)   ;z = altitude (km)
@@ -1238,42 +1285,40 @@ endif
 	;-----------------------
 	;COLLISION CALCULATIONS
 	;-----------------------
-	
+
 		;e-/e- collision freq (Schunk and Nagy00)
 		vee = 1.5d-4 * E^1.5 * N_e    ;E=energy in eV
-		
+
 		;e-/neutral collision freq as a function of altitude ("standard approx" -> Morfitt and Shellman76)
 									;Also see: Rishbeth and Garriott69, pg. 133
 									;Schunk and Nagy00, pg 131
 		v_z = 1.82d11*exp(-0.15*z)
-		
+
 		;e-/neutral collision freq (elastic)
 		ven = sigma_en * V * N     ;sigma_en = cross section (Banks and Kocharts73)
 								   ;N = neutral density
-								   
+
 		;e-/neutral collision freq (inelastic)
 		ven = sigma_kj * V * N_k   ;sigma_kj = cross section of jth state for kth species
 								   ;N_k - density of kth species
-		
+
 		;perturbation of e-/neutral collision freq from e- heating (Rodger98)
 		ven_p = ven*(Te/To)^0.5   ;See Inan91 for Te profile (Fig2b)
-	
+
 
 	;--------------------------------
 	;MINIMUM PENETRATION FREQS OF IONOSPHERE
 	;--------------------------------
-	
+
 		;First a definition: The penetration freq is that which makes n=0 at the max plasma density
 		;of the layer (Budden '61 section 13.2)
-		
+
 		;plasma and cyclotron freqs at max plasma freq
 		fceM = xx
 		fpeM = xx
-		
+
 		;O-mode
-		fminO = fpeM    
+		fminO = fpeM
 		;X-mode
 		fminX1 = 0.5*(sqrt(fceM^2 + 4*fpeM^2) + fceM)  ;first root (normally observed when f<fceM)
 		fminX2 = 0.5*(sqrt(fceM^2 + 4*fpeM^2) - fceM)  ;second root
-
-
