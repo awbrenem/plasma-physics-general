@@ -1,12 +1,13 @@
 ;+
 ; NAME: cycl_energies
 ; SYNTAX:
-; PURPOSE: Calculates relativistic cyclotron resonance energies (keV) for input arrays
+; PURPOSE: Calculates relativistic cyclotron (and Landau) resonance energies (keV) for input arrays
 ;          of wave freq, fce, |k|, nres, etc... Solves the quadratic eqn for parallel
 ;          e- velocity that comes from Doppler-shifted cyclotron resonance condition.
 ;          Note that user needs to choose their own dispersion relation to determine |k|
 ; INPUT: (see cycl_energies_test.pro)
-; OUTPUT: Total electron energy and field-aligned energy for both +/- resonance.
+; OUTPUT: Total electron energy (keV) and field-aligned energy for both +/- resonance, as
+;         well as respective velocities in km/s
 ;
 ; NOTE: This has been tested against Lorentzen01 Plate 7 showing close agreement (see cycl_energies_test.pro)
 ;
@@ -35,6 +36,8 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   vtots_cycl = fltarr(n)
   Ez_cycl = fltarr(n)
   Etots_cycl = fltarr(n)
+  v_landau = fltarr(n)
+  E_landau = fltarr(n)
 
 
   w = 2d0*!dpi*freq
@@ -44,7 +47,6 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
 
   c_ms = 2.99792458d8      ; -Speed of light in vacuum (m/s)
   c_kms = c_ms/1000d0
-
 
 
   ;set up quadratic eqn
@@ -74,8 +76,6 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   vtots_p = vzp/cos_pa
   vtots_m = vzm/cos_pa
 
-
-
   ;; Relativistic energy in keV (e.g. p37 in "Modern Physics, 2nd edition")
   Etots_cyclp = (0.511d6/sqrt(1-(vtots_p^2/c_ms^2)) - 0.511d6)/1000.
   Ez_cyclp = (0.511d6/sqrt(1-(vzp^2/c_ms^2)) - 0.511d6)/1000.
@@ -84,16 +84,47 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   Ez_cyclm = (0.511d6/sqrt(1-(vzm^2/c_ms^2)) - 0.511d6)/1000.
 
 
+  ;-----------------------------------------
+  ;Same calculation but for Landau resonance (note: the +/- solutions are the same,
+  ;so I'll just use the +)
+  ;-----------------------------------------
+
+
+  ;set up quadratic eqn
+  a1 = 0.
+  a2 = kmag*cos_t
+  a2 = a2^2
+  a = a1 + a2
+
+  b = 2.*w*kmag*cos_t
+
+  c1 = w^2
+  c2 = 0.
+  c = c1 - c2
+
+
+  ;plus solution to quadratic eqn
+  vzl = (-b + sqrt(b^2 - 4.*a*c))/(2.*a)
+  vzl = 1000.*abs(vzl)   ;m/s
+  vtots_l = vzl/cos_pa
+
+  ;; Relativistic energy in keV (e.g. p37 in "Modern Physics, 2nd edition")
+  Etots_landau = (0.511d6/sqrt(1-(vtots_l^2/c_ms^2)) - 0.511d6)/1000.
+  Ez_landau = (0.511d6/sqrt(1-(vzl^2/c_ms^2)) - 0.511d6)/1000.
 
 
   return,{$
-  E_cycl_normal:Etots_cyclp,$
+  E_cycl_normal:Etots_cyclp,$           ;keV
   E_cycl_anom:Etots_cyclm,$
+  E_landau:Etots_landau,$
   Ez_cycl_normal:Ez_cyclp,$
   Ez_cycl_anom:Ez_cyclm,$
-  vtotal_cycl_normal:vtots_p,$
-  vtotal_cycl_anom:vtots_m,$
-  vz_cycl_normal:vzp,$
-  vz_cycl_anom:vzm}
+  Ez_landau:Ez_landau,$
+  vtotal_cycl_normal:vtots_p/1000.,$    ;km/s
+  vtotal_cycl_anom:vtots_m/1000.,$
+  vtotal_landau:vtots_l/1000.,$
+  vz_cycl_normal:vzp/1000.,$
+  vz_cycl_anom:vzm/1000.,$
+  vz_landau:vzl/1000.}
 
 end
