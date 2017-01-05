@@ -61,9 +61,9 @@ vals_30lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
 mevline = replicate(1d6,1000)
 
 !p.charsize = 2
-plot,freq,vals_0lat.E_cycl_normal*1000.,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
-oplot,freq,vals_15lat.E_cycl_normal*1000
-oplot,freq,vals_30lat.E_cycl_normal*1000
+plot,freq,vals_0lat.E_cycl_counterstream*1000.,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
+oplot,freq,vals_15lat.E_cycl_counterstream*1000
+oplot,freq,vals_30lat.E_cycl_counterstream*1000
 oplot,freq,mevline,linestyle=2
 
 
@@ -95,9 +95,9 @@ vals_s3 = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
 
 
 !p.charsize = 2
-plot,freq,vals_s1.E_cycl_normal*1000.,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
-oplot,freq,vals_s2.E_cycl_normal*1000
-oplot,freq,vals_s3.E_cycl_normal*1000
+plot,freq,vals_s1.E_cycl_counterstream*1000.,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
+oplot,freq,vals_s2.E_cycl_counterstream*1000
+oplot,freq,vals_s3.E_cycl_counterstream*1000
 oplot,freq,mevline,linestyle=2
 
 
@@ -116,6 +116,11 @@ oplot,freq,mevline,linestyle=2
 
 ;Attempt to recreate Abel and Thorne98 Fig2
 
+
+c_ms = 2.99792458d8      ; -Speed of light in vacuum (m/s)
+c_kms = c_ms/1000.
+
+.compile /Users/aaronbreneman/Desktop/code/Aaron/IDL/analysis/dipole.pro
 L = dipole(3.6)
 fce0 = 28*l.b[0]
 
@@ -146,7 +151,7 @@ vals_10 = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
 
 
 !p.charsize = 2
-plot,freq,vals_1.E_cycl,/ylog,yrange=[1d0,1d4],xrange=[4000,5000]
-oplot,freq,vals_2.E_cycl
-oplot,freq,vals_4.E_cycl
-oplot,freq,vals_10.E_cycl
+plot,freq,vals_1.E_cycl_counterstream,/ylog,yrange=[1d0,1d4],xrange=[4000,5000]
+oplot,freq,vals_2.E_cycl_counterstream
+oplot,freq,vals_4.E_cycl_counterstream
+oplot,freq,vals_10.E_cycl_counterstream
