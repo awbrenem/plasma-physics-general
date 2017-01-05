@@ -507,44 +507,8 @@ if goo[0] ne -1 then angle_rad_a[goo] = angle_rad_a[goo] - 24
 
 
 
-	;Create a structure with info along the entire length of a field line
-	;(From Kris's dipole.pro) returns a structure with the colatitude, field
-	;line length, and magnetic field magnitude along a field line defined by input L value
 
-	L=4.8
-	RE=6378.d ; earth radius [km]
-	bsurf=30000.d ; equatorial surface field [nT]
-
-	lambda=dindgen(9000)/100. ; colatitude [degrees]
-	lambdarad=lambda*!dpi/180.d
-
-	; arcsinh(x) = ln(x+sqrt(1+x^2))
-	x=sqrt(3)*sin(lambdarad)
-	s=RE*L/(2.*sqrt(3.))*(alog(x+sqrt(1.+x^2.)) + x*sqrt(x^2+1))
-	r=RE*L*cos(lambdarad)^2
-	goodindex=where(r gt RE)
-
-	r=r[goodindex]
-	s=s[goodindex]   ;arc length (last value is field line half-length)
-	lambda=lambda[goodindex]
-	lambdarad=lambdarad[goodindex]
-
-	B=bsurf/(L^3.)*sqrt(1+x^2)/(cos(lambdarad)^6.)
-
-	;another eq for Bo dipole
-	Beq = 3.11d4  ;nT
-	Bo = Beq*sqrt(1+3*cos(theta)^2)/r^3
-
-	fce=.028d*b ; fce [kHz] for B [nT]
-
-	struct={colat:lambda,r:r,s:s,B:B,fce:fce}
-
-	plot,struct.R/6370.,struct.colat*!dtor,/polar
-	plot,struct.R/6370.,-1*struct.colat*!dtor,/polar
-
-;---------------------------
-
-
+;-----------------------------------
 
 ;SM longitude to MLT
 longs = [25.3,32.5,46.7,129.0,278.8,300.7]
@@ -626,7 +590,7 @@ L = 5  ;dummy value. Bo/Bmirror(mlat) is L-value independent
 dip = dipole(L)
 
 mlat_mirror = 49.8
-goo = where(dip.colat ge mlat_mirror)
+goo = where(dip.lat ge mlat_mirror)
 Bmirror = dip.B[goo[0]]
 Bo = min(dip.B)
 pa_max = asin(sqrt(Bo/Bmirror))/!dtor
@@ -635,9 +599,9 @@ print,pa_max
 
 ;-----------------------------------------------------------------------------------------------
 ;---bounce period for dipole field (http://farside.ph.utexas.edu/teaching/plasma/lectures/node22.html)
-ang = 65.   ;PA at mag eq
-L = 5.5
-E = 20.      ;Energy in keV
+ang = 5.   ;PA at mag eq
+L = 5.0
+E = 250.      ;Energy in keV
 
 ;electrons
 Tbe = 5.62d-2 * L * (1-0.43*sin(ang*!dtor))/sqrt(E/1000.)    ;seconds
