@@ -23,9 +23,9 @@
 ;          densv         -> value of input density
 ;          fcev          -> value of input fce
 ;          freqv         -> value of input freq
-;          type          -> defaults to cyclotron resonance. Other
-;                           options are 'landau' and 'anomalous'
-;          harmonic      -> |harmonic| of the resonance cyclotron or anomalous resonance
+;          type          -> defaults to counter-streaming ('counterstream') cyclotron resonance. Other
+;                           options are 'landau' and 'costream'
+;          harmonic      -> |harmonic| of the resonance cyclotron resonance
 ;
 ; REQUIRES: updated version of dfanning's colorbar.pro
 ; HISTORY: Written by AWB 2015-01-30
@@ -135,13 +135,13 @@ pro cycl_energies_parameter_space,pa,theta_k,$
         kvec = sqrt(4*!pi^2*fpe[i]^2*freq/(c^2*(fce[j]*cos(theta_k*!dtor)-freq)))
         evals = cycl_energies(freq,theta_k,pa,fce[j],kvec,nres)
 
-        if type eq 'cyclotron' then begin
-          Ez[i,j] = evals.ez_cycl_normal
-          Etots[i,j] = evals.e_cycl_normal
+        if type eq 'counterstream' then begin
+          Ez[i,j] = evals.ez_cycl_counterstream
+          Etots[i,j] = evals.e_cycl_counterstream
         endif
-        if type eq 'anomalous' then begin
-          Ez[i,j] = evals.ez_cycl_anom
-          Etots[i,j] = evals.e_cycl_anom
+        if type eq 'costream' then begin
+          Ez[i,j] = evals.ez_cycl_costream
+          Etots[i,j] = evals.e_cycl_costream
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
@@ -160,13 +160,13 @@ pro cycl_energies_parameter_space,pa,theta_k,$
 
         kvec = sqrt(4*!pi^2*fpe^2*freq[i]/(c^2*(fce[j]*cos(theta_k*!dtor)-freq[i])))
         evals = cycl_energies(freq[i],theta_k,pa,fce[j],kvec,nres)
-        if type eq 'cyclotron' then begin
-          Ez[i,j] = evals.ez_cycl_normal
-          Etots[i,j] = evals.e_cycl_normal
+        if type eq 'counterstream' then begin
+          Ez[i,j] = evals.ez_cycl_counterstream
+          Etots[i,j] = evals.e_cycl_counterstream
         endif
-        if type eq 'anomalous' then begin
-          Ez[i,j] = evals.ez_cycl_anom
-          Etots[i,j] = evals.e_cycl_anom
+        if type eq 'costream' then begin
+          Ez[i,j] = evals.ez_cycl_costream
+          Etots[i,j] = evals.e_cycl_costream
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
@@ -183,13 +183,13 @@ pro cycl_energies_parameter_space,pa,theta_k,$
 
         kvec = sqrt(4*!pi^2*fpe[j]^2*freq[i]/(c^2*(fce*cos(theta_k*!dtor)-freq[i])))
         evals = cycl_energies(freq[i],theta_k,pa,fce,kvec,nres)
-        if type eq 'cyclotron' then begin
-          Ez[i,j] = evals.ez_cycl_normal
-          Etots[i,j] = evals.e_cycl_normal
+        if type eq 'countersteam' then begin
+          Ez[i,j] = evals.ez_cycl_counterstream
+          Etots[i,j] = evals.e_cycl_counterstream
         endif
-        if type eq 'anomalous' then begin
-          Ez[i,j] = evals.ez_cycl_anom
-          Etots[i,j] = evals.e_cycl_anom
+        if type eq 'costream' then begin
+          Ez[i,j] = evals.ez_cycl_costream
+          Etots[i,j] = evals.e_cycl_costream
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
