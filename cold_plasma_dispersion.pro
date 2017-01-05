@@ -9,7 +9,7 @@
 ;				 --plasma, cyclotron and related frequencies
 ;				 --Dispersion relation (index of refr, wavelength, kvect,
 ;				   polarization, etc...)
-;				 --Resonance energies (cyclotron, anomalous, landau) for range of
+;				 --Resonance energies (cyclotron, landau) for range of
 ;				   pitch angles
 ;				 --Wave mode from CMA diagram (IN PROGRESS....)
 ;
@@ -314,28 +314,28 @@ nres = replicate(1,10)
 
 
 
-;cyclotron and anomalous cyclotron
+;cyclotron and costreamalous cyclotron
 evals = cycl_energies(freqtmp,thetadegtmp,pa,fcetmp,kvecttmp,nres)
-vz_cycl = evals.vz_cycl_normal
-vz_anom = evals.vz_cycl_anom
+vz_cycl = evals.vz_cycl_counterstream
+vz_costream = evals.vz_cycl_costream
 vz_landau = evals.vz_landau
-vtots_cycl = evals.vtotal_cycl_normal
-vtots_anom = evals.vtotal_cycl_anom
+vtots_cycl = evals.vtotal_cycl_counterstream
+vtots_costream = evals.vtotal_cycl_costream
 vtots_landau = evals.vtotal_landau
-Ez_cycl = evals.Ez_cycl_normal
-Ez_anom = evals.Ez_cycl_anom
+Ez_cycl = evals.Ez_cycl_counterstream
+Ez_costream = evals.Ez_cycl_costream
 Ez_landau = evals.Ez_landau
-Etots_cycl = evals.E_cycl_normal
-Etots_anom = evals.E_cycl_anom
+Etots_cycl = evals.E_cycl_counterstream
+Etots_costream = evals.E_cycl_costream
 Etots_landau = evals.E_landau
 vc_ratio_cycl = 1000.*vtots_cycl/c_ms
-vc_ratio_anom = 1000.*vtots_anom/c_ms
+vc_ratio_costream = 1000.*vtots_costream/c_ms
 vc_ratio_landau = 1000.*vtots_landau/c_ms
 
 
 notes2 = ['values are for each pitch angle','resonance energies in keV','velocities in km/s','vc_ratio_xxx is the ratio v/c']
-cyclo_res = {vz:vz_cycl,vtots:vtots_cycl,vc_ratio:vc_ratio_cycl,Ez:Ez_cycl,Etots:Etots_cycl,pitch_angles:pa,notes:notes2}
-anoma_res = {vz:vz_anom,vtots:vtots_anom,vc_ratio:vc_ratio_anom,Ez:Ez_anom,Etots:Etots_anom,pitch_angles:pa,notes:notes2}
+cyclo_counterstream_res = {vz:vz_cycl,vtots:vtots_cycl,vc_ratio:vc_ratio_cycl,Ez:Ez_cycl,Etots:Etots_cycl,pitch_angles:pa,notes:notes2}
+cyclo_costream_res = {vz:vz_costream,vtots:vtots_costream,vc_ratio:vc_ratio_costream,Ez:Ez_costream,Etots:Etots_costream,pitch_angles:pa,notes:notes2}
 landau_res = {vz:vz_landau,vtots:vtots_landau,vc_ratio:vc_ratio_landau,Ez:Ez_landau,Etots:Etots_landau,pitch_angles:pa,notes:notes2}
 
 
@@ -413,8 +413,8 @@ cBw_to_Ew = sqrt(sin(beta)^2*n^2)
               resangle:resangle, $
               phasevel:phasevel, $
               bpol:bpol, $
-              cyclo_res:cyclo_res,$
-              anoma_res:anoma_res,$
+              cyclo_counterstream_res:cyclo_res,$
+              cyclo_costream_res:costream_res,$
               landau_res:landau_res,$
               energy_notes:notes2,$
               fpe:fpe,$
