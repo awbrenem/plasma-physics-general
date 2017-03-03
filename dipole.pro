@@ -14,7 +14,8 @@
 ;
 ;
 ;  INPUT:       L -> L-shell
-;
+;								bmult (optional). Multiplicative factor for the field values.
+;									Use to scale values to observations
 ;
 ;  EXAMPLES:    To plot use:
 ;					plot,struct.R/6370.,struct.lat*!dtor,/polar
@@ -47,11 +48,13 @@
 ;*****************************************************************************************
 ;-
 
-function dipole,L
+function dipole,L,bmult
 
 ; returns a structure with the latitude, field line length, and
 ; magnetic field magnitude along a field line defined by input L value
 
+
+	if ~KEYWORD_SET(bmult) then bmult = 1.
 
 	RE=6370.d ; earth radius [km]
 	bsurf=30000.d ; equatorial surface field [nT]
@@ -77,7 +80,7 @@ function dipole,L
 		thetarad = !values.f_nan
 	endelse
 
-	B=bsurf/(L^3.)*sqrt(1+x^2)/(cos(thetarad)^6.)
+	B=bmult*bsurf/(L^3.)*sqrt(1+x^2)/(cos(thetarad)^6.)
 	fce=.028d*b ; fce [kHz] for B [nT]
 
 
@@ -86,12 +89,12 @@ function dipole,L
 ;	theta = 90. - theta
 
 	;---dipole field in SM spherical coord (Kivelson and Russell pg 165)
-	Br = (1d3)*2*M*cos(!dtor*theta)/R2^3   ;in nT
-	Btheta = (1d3)*M*sin(!dtor*theta)/R2^3
+	Br = bmult*(1d3)*2*M*cos(!dtor*theta)/R2^3   ;in nT
+	Btheta = bmult*(1d3)*M*sin(!dtor*theta)/R2^3
 
 	notes = ['latitude in deg','r=radius in km','s=arc length in km','B in nT','fce in kHz',$
 			'Br=radial Bfield component','Btheta=theta Bfield component']
 	struct={lat:theta,r:r,s:s,B:B,fce:fce,Br:Br,Btheta:Btheta,notes:notes}
-	
+
 	return,struct
 end
