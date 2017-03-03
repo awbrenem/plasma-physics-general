@@ -27,10 +27,10 @@
 
 
 
-function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
+function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
 
   n = n_elements(theta_kb[*,0])
-  nrays = n_elements(freq)
+  nrays = n_elements(freq[0,*])
 
   if nrays eq 0 then nrays = 1
   ;returned values
@@ -38,7 +38,7 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   vtots_cycl = fltarr(n,nrays)
   Ez_cycl = fltarr(n,nrays)
   Etots_cycl = fltarr(n,nrays)
-  v_landau = fltarr(n,nrays)
+  vz_landau = fltarr(n,nrays)
   E_landau = fltarr(n,nrays)
   vzp = fltarr(n,nrays)
   vzm = fltarr(n,nrays)
@@ -54,6 +54,10 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   ez_landau = fltarr(n,nrays)
 
 
+
+  me_ev  = 0.51d6       ; -Electron mass in eV/c^2
+  c2t = 1  ;speed of light squared. Cancels out from me_ev
+  fpe = 8980.*sqrt(dens)
   w = 2d0*!dpi*freq
   wce = 2d0*!dpi*fce
   cos_t = cos(theta_kb*!dtor)
@@ -107,27 +111,34 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,nres
   ;-----------------------------------------
 
 
-  ;set up quadratic eqn
-  a1 = 0.
-  a2 = kmag[*,qq]*cos_t[*,qq]
-  a2 = a2^2
-  a = a1 + a2
+  Ez_landau[*,qq] = 0.5*me_ev*c2t*((fce[*,qq]^2)/(fpe[*,qq]^2))*(freq[*,qq]/fce[*,qq])*(cos(theta_kb[*,qq]*!dtor)-(freq[*,qq]/fce[*,qq]))*(1/(cos(theta_kb[*,qq]*!dtor)^2))/1000.
 
-  b = 2.*w[qq]*kmag[*,qq]*cos_t[*,qq]
+  fac1 = 0.511d6/(0.511d6 + 1000.*Ez_landau[*,qq])
+  fac1 = 1. - fac1^2
+  vz2 = c_ms^2*fac1
+  vz_landau[*,qq] = sqrt(vz2)
 
-  c1 = w[qq]^2
-  c2 = replicate(0.,n)
-  c = c1 - c2
-
-
-  ;plus solution to quadratic eqn
-  vzl[*,qq] = (-b + sqrt(b^2 - 4.*a*c))/(2.*a)
-  vzl[*,qq] = 1000.*abs(vzl[*,qq])   ;m/s
-  vtots_l[*,qq] = vzl[*,qq]/cos_pa[qq]
-
-  ;; Relativistic energy in keV (e.g. p37 in "Modern Physics, 2nd edition")
-  Etots_landau[*,qq] = (0.511d6/sqrt(1-(vtots_l[*,qq]^2/c_ms^2)) - 0.511d6)/1000.
-  Ez_landau[*,qq] = (0.511d6/sqrt(1-(vzl[*,qq]^2/c_ms^2)) - 0.511d6)/1000.
+;  ;set up quadratic eqn
+;  a1 = 0d
+;  a2 = double(kmag[*,qq]*cos_t[*,qq])
+;  a2 = a2^2
+;  a = a1 + a2
+;
+;  b = 2d*w[qq]*kmag[*,qq]*cos_t[*,qq]
+;
+;  c1 = w[qq]^2
+;  c2 = replicate(0d,n)
+;  c = c1 - c2
+;
+;
+;  ;plus solution to quadratic eqn
+;  vzl[*,qq] = (-1d*b + sqrt(b^2 - 4d*a*c))/(2d*a)
+;  vzl[*,qq] = 1000d*abs(vzl[*,qq])   ;m/s
+;  vtots_l[*,qq] = vzl[*,qq]/cos_pa[qq]
+;
+;  ;; Relativistic energy in keV (e.g. p37 in "Modern Physics, 2nd edition")
+;  Etots_landau[*,qq] = (0.511d6/sqrt(1-(vtots_l[*,qq]^2/c_ms^2)) - 0.511d6)/1000d
+;  Ez_landau[*,qq] = (0.511d6/sqrt(1-(vzl[*,qq]^2/c_ms^2)) - 0.511d6)/1000d
 
 
 endfor
@@ -136,7 +147,7 @@ endfor
   return,{$
   E_cycl_counterstream:Etots_cyclp,$           ;keV
   E_cycl_costream:Etots_cyclm,$
-  E_landau:Etots_landau,$
+;  E_landau:Etots_landau,$
   Ez_cycl_counterstream:Ez_cyclp,$
   Ez_cycl_costream:Ez_cyclm,$
   Ez_landau:Ez_landau,$
@@ -145,6 +156,6 @@ endfor
   vtotal_landau:vtots_l/1000.,$
   vz_cycl_counterstream:vzp/1000.,$
   vz_cycl_costream:vzm/1000.,$
-  vz_landau:vzl/1000.}
+  vz_landau:vz_landau/1000.}
 
 end
