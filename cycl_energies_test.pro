@@ -17,12 +17,12 @@ c_kms = c_ms/1000.
 .compile /Users/aaronbreneman/Desktop/code/Aaron/IDL/analysis/dipole.pro
 L = dipole(4.9)
 
-plot,l.colat,l.b
+plot,l.lat,l.b
 
 fce0 = 28*l.b[0]
-goo = where(l.colat ge 15.)
+goo = where(l.lat ge 15.)
 fce15 = 28.*l.b[goo[0]]
-goo = where(l.colat ge 30.)
+goo = where(l.lat ge 30.)
 fce30 = 28.*l.b[goo[0]]
 
 freq = indgen(1000)*8000./999.
@@ -40,21 +40,21 @@ w = 2.*!pi*freq
 wce = 2.*!pi*fce
 index_ref2 = 1 + wpe^2/(w*(wce*cos(theta_kb*!dtor)-w))
 kmag = sqrt(index_ref2*w^2/c_kms^2)
-vals_0lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
+vals_0lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,dens,nres)
 
 fce = replicate(fce15,1000.)
 dens = replicate(5.,1000.)
 wce = 2.*!pi*fce
 index_ref2 = 1 + wpe^2/(w*(wce*cos(theta_kb*!dtor)-w))
 kmag = sqrt(index_ref2*w^2/c_kms^2)
-vals_15lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
+vals_15lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,dens,nres)
 
 fce = replicate(fce30,1000.)
 dens = replicate(5.,1000.)
 wce = 2.*!pi*fce
 index_ref2 = 1 + wpe^2/(w*(wce*cos(theta_kb*!dtor)-w))
 kmag = sqrt(index_ref2*w^2/c_kms^2)
-vals_30lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,nres)
+vals_30lat = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,dens,nres)
 
 
 ;Plot the values to recreate Lorentzen01 Plate 7a
