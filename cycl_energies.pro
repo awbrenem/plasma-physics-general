@@ -29,6 +29,7 @@
 
 function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
 
+
   n = n_elements(theta_kb[*,0])
   nrays = n_elements(freq[0,*])
 
@@ -142,6 +143,8 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
 
 
 endfor
+
+
 
 
   return,{$
