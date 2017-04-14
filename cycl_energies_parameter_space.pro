@@ -45,11 +45,12 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   densv=dens,fcev=fce,freqv=freq,$
   type=type,harmonic=nres
 
+
   rbsp_efw_init
 
-
+  if ~KEYWORD_SET(dens) then dens = 1  ;means density not used
   if ~KEYWORD_SET(nres) then nres = 1
-  if ~keyword_set(type) then type = 'cyclotron'
+  if ~keyword_set(type) then type = 'counterstream'
   if keyword_set(density_range) then density_range = float(density_range)
   if keyword_set(fce_range) then fce_range = float(fce_range)
   if keyword_set(freq_range) then freq_range = float(freq_range)
@@ -133,7 +134,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
       for j=0L,n_elements(fce)-1 do begin
 
         kvec = sqrt(4*!pi^2*fpe[i]^2*freq/(c^2*(fce[j]*cos(theta_k*!dtor)-freq)))
-        evals = cycl_energies(freq,theta_k,pa,fce[j],kvec,nres)
+        evals = cycl_energies(freq,theta_k,pa,fce[j],kvec,dens,nres)
 
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
@@ -145,7 +146,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
-          Etots[i,j] = evals.e_landau
+          Etots[i,j] = evals.ez_landau
         endif
 
       endfor
@@ -153,13 +154,12 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   endif
 
 
-
   if scheme eq 1 then begin
     for i=0L,n_elements(freq)-1 do begin
       for j=0L,n_elements(fce)-1 do begin
 
         kvec = sqrt(4*!pi^2*fpe^2*freq[i]/(c^2*(fce[j]*cos(theta_k*!dtor)-freq[i])))
-        evals = cycl_energies(freq[i],theta_k,pa,fce[j],kvec,nres)
+        evals = cycl_energies(freq[i],theta_k,pa,fce[j],kvec,dens,nres)
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
           Etots[i,j] = evals.e_cycl_counterstream
@@ -170,7 +170,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
-          Etots[i,j] = evals.e_landau
+          Etots[i,j] = evals.ez_landau
         endif
 
       endfor
@@ -182,8 +182,8 @@ pro cycl_energies_parameter_space,pa,theta_k,$
       for j=0L,n_elements(dens)-1 do begin
 
         kvec = sqrt(4*!pi^2*fpe[j]^2*freq[i]/(c^2*(fce*cos(theta_k*!dtor)-freq[i])))
-        evals = cycl_energies(freq[i],theta_k,pa,fce,kvec,nres)
-        if type eq 'countersteam' then begin
+        evals = cycl_energies(freq[i],theta_k,pa,fce,kvec,dens,nres)
+        if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
           Etots[i,j] = evals.e_cycl_counterstream
         endif
@@ -193,7 +193,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
         endif
         if type eq 'landau' then begin
           Ez[i,j] = evals.ez_landau
-          Etots[i,j] = evals.e_landau
+          Etots[i,j] = evals.ez_landau
         endif
 
       endfor
@@ -282,8 +282,6 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   colorbar,range=[minval,maxval],position=[0.94, 0.10, 0.97, 0.90],/vertical,/ylog,$
   _extra={yminor:9,ytickformat:'(f9.3)'}
 
-
   if keyword_set(ps) then pclose
-
 
 end
