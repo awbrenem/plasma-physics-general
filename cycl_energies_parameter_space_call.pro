@@ -10,9 +10,9 @@
 ps = 0      ;save to postscript?
 
 pa=5.        ;e- pitch angle
-theta_k=30.   ;wave normal angle
+theta_k=0.   ;wave normal angle
 density_range = [1,10]   ;cm-3
-fce_range = [6000,8000]  ;Hz
+fce_range = [800,25000]  ;Hz
 freq_range = [0,8000]    ;Hz
 minval = 1.    ;minimum energy plotted (keV)
 maxval = 1000.   ;maximum energy plotted (keV)
@@ -22,19 +22,19 @@ ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
 ;scheme 0:  fce vs density (at constant wave freq)
 cycl_energies_parameter_space,pa,theta_k,scheme=0,ps=ps,minval=minval,maxval=maxval,$
                               freqv=1500.,fce_range=fce_range,density_range=density_range,$
-                              ndens=ndens,nfce=nfce,nfreq=nfreq,type='landau',harmonic=2
+                              ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1
 
 
 ;scheme 1:  fce vs freq (at constant density)
 cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,minval=minval,maxval=maxval,$
                               densv=5.,fce_range=fce_range,freq_range=freq_range,$
-                              ndens=ndens,nfce=nfce,nfreq=nfreq
+                              ndens=ndens,nfce=nfce,nfreq=nfreq;,type='landau'
 
 
 ;scheme 2:  density vs freq (at constant fce)
 cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,minval=minval,maxval=maxval,$
                               fcev=7000.,density_range=density_range,freq_range=freq_range,$
-                              ndens=ndens,nfce=nfce,nfreq=nfreq
+                              ndens=ndens,nfce=nfce,nfreq=nfreq;,type='landau'
 
 
 
@@ -51,7 +51,7 @@ density_range = [1,60]   ;cm-3
 fce_range = [1000,7000]  ;Hz
 freq_range = [80,300]    ;Hz
 minval = 0.001    ;minimum energy plotted (keV)
-maxval = 1.   ;maximum energy plotted (keV)
+maxval = 100.   ;maximum energy plotted (keV)
 
 ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
 
@@ -69,7 +69,7 @@ cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,minval=minval,maxval=max
 
 ;scheme 2:  density vs freq (at constant fce)
 cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,minval=minval,maxval=maxval,$
-                              fcev=1000.,density_range=density_range,freq_range=freq_range,$
+                              fcev=5000.,density_range=density_range,freq_range=freq_range,$
                               ndens=ndens,nfce=nfce,nfreq=nfreq
 
 
