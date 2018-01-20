@@ -2,6 +2,35 @@
 
 rbsp_efw_init
 
+
+;--------------------------------------------------------
+;Compare my values to those in Foster (2016), the paper about
+;VLF transmitters forming the VLF bubble.
+;--------------------------------------------------------
+
+c_ms = 2.99792458d8      ; -Speed of light in vacuum (m/s)
+c_kms = c_ms/1000.
+
+fce = 60000.
+freq = 21400.
+pitchangle = 60.
+theta_kb = 67.
+nres = 1.
+dens = 30.
+
+;determine k from whistler dispersion relation for low freq whistlers
+fpe = 8980.*sqrt(dens)
+wpe = 2.*!pi*fpe
+w = 2.*!pi*freq
+wce = 2.*!pi*fce
+index_ref2 = 1 + wpe^2/(w*(wce*cos(theta_kb*!dtor)-w))
+kmag = sqrt(index_ref2*w^2/c_kms^2)
+print,kmag
+
+
+vals = cycl_energies(freq,theta_kb,pitchangle,fce,kmag,dens,nres)
+print,vals.e_cycl_counterstream
+
 ;--------------------------------------------------------
 ;Create Plate 7a plot from Lorentzen01 that shows Ecycl as a function
 ;of freq for three latitudes (0, 15, 30)
@@ -14,7 +43,7 @@ c_kms = c_ms/1000.
 
 
 ;get fce values from dipole model
-.compile /Users/aaronbreneman/Desktop/code/Aaron/IDL/analysis/dipole.pro
+.compile /Users/aaronbreneman/Desktop/code/Aaron/github.umn.edu/plasma-physics-general/dipole.pro
 L = dipole(4.9)
 
 plot,l.lat,l.b
@@ -65,6 +94,30 @@ plot,freq,vals_0lat.E_cycl_counterstream*1000.,/ylog,yrange=[1d3,1d7],xtitle='fr
 oplot,freq,vals_15lat.E_cycl_counterstream*1000
 oplot,freq,vals_30lat.E_cycl_counterstream*1000
 oplot,freq,mevline,linestyle=2
+
+
+;Compare calculation from cycl_energies.pro to the calculation in
+;Energy --> velocity conversion from plasma_params_crib.pro (this calculation
+;I use in my raytracing routines to calculate time for particles to precipitate
+;into the atmosphere from their loss cone scattering point...these in turn have
+;been vetted against Alex's full Lorentz code calculations, which are known to
+;be correct.)
+
+EMeV = vals_0lat.e_cycl_counterstream/1000.
+
+pa = 5.
+ckms = 3d5  ;km/s
+gama = EMeV/0.511  + 1.
+
+vtots = 3d5*sqrt(1 - (0.511/(EMeV + 0.511))^2)
+vpar = vtots*cos(pa*!dtor)
+
+;Compare two calculations for velocity
+plot,freq,vals_0lat.vtotal_cycl_counterstream;,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
+oplot,freq,vtots,color=250
+
+plot,freq,vals_0lat.vz_cycl_counterstream;,/ylog,yrange=[1d3,1d7],xtitle='freq(Hz)',ytitle='Energy(eV)'
+oplot,freq,vpar,color=250
 
 
 
@@ -120,7 +173,7 @@ oplot,freq,mevline,linestyle=2
 c_ms = 2.99792458d8      ; -Speed of light in vacuum (m/s)
 c_kms = c_ms/1000.
 
-.compile /Users/aaronbreneman/Desktop/code/Aaron/IDL/analysis/dipole.pro
+.compile /Users/aaronbreneman/Desktop/code/Aaron/github.umn.edu/plasma-physics-general/dipole.pro
 L = dipole(3.6)
 fce0 = 28*l.b[0]
 
