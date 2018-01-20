@@ -28,7 +28,7 @@
 		;LIGHTNING CALCULATIONS
 		;COLLISION CALCULATIONS
 		;MINIMUM PENETRATION FREQS OF IONOSPHERE
-
+;Loss cone size
 
 
 ;-------------------------------
@@ -42,8 +42,8 @@
 ;--------------------------
 ;INPUT VALUES
 ;--------------------------
-B = 3700. ;nT
-n = 44000. ;cm-3
+B = 167. ;nT
+n = 12. ;cm-3
 Z = 1    ;charge state (number of unmatched e-)
 muu = 1  ;mi/mp
 
@@ -61,7 +61,7 @@ gamai = 3.
 gamae = 1.
 
 
-Te = 0.1 ;eV
+Te = 7000 ;eV
 Ti = 1. ;eV
 f=99. ;Hz  wave freq in sc frame
 Vsw = 400  ;solar wind vel (km/sec)
@@ -114,8 +114,7 @@ E=VxB, where E(mV/m) = V(km/s) * B(nT)/1000
 ;Vsc ~ 10 km/s,   B = 3d4 nT
 ;E = 10.*3d4/1000. = 300 nT
 
-
-
+;Vph = E*1000/B
 
 ;-------------------------
 ;USEFUL UNITS
@@ -172,7 +171,7 @@ pkin = (100.^3) *n*1.38e-23*Ti*10^12                 ;kinetic pressure in pPa (B
 pkin = nU*1e-3*(1869.6979 + 0.0161082*TiU) ;kinetic pressure
 
 
-gendrin_angle = acos(2.*f/fce)/!dtor                 ;whistler mode Gendrin angle
+gendrin_angle = acos(2.*f/fce)/!dtor       ;whistler mode Gendrin angle (approx form)
 res_angle = acos(f/fce)/!dtor					     ;resonance cone angle
 
 
@@ -206,11 +205,10 @@ print,'beta_t = ' + strtrim(beta_t)
 
 ;Find ratio of B2/B1 = A1/A2.
 
-alt = 70.   ;km
+alt = 500.   ;km
 L = 5.5
 Bo_mageq = 167.  ;nT
 
-.compile ~/Desktop/community/dipole.pro
 dip = dipole(L)
 
 radius = dip.r - 6370.
@@ -221,7 +219,7 @@ Bo_km = dip.b[boo]
 Bratio = Bo_km/Bo_mageq
 
 ;diameter of flux tube at "alt"
-d1 = 100. ;km
+d1 = 2000. ;km
 d2 = d1/sqrt(Bratio)
 
 
@@ -326,12 +324,34 @@ d2 = d1/sqrt(Bratio)
 	;--------------------------------------------
 	;Drift period of particle around Earth (Kivelson eqn 10.6)
 	;Dipole field, grad/curvature drift
-	r = 2.6   ;Radius period in RE
-	B = 1700.  ;Bo in nT
-	keV = 100. ;electron energy
-	mlt_extent = 1    ;hours
+  ;--------------------------------------------
 
-	Td = 60. * 56.*(r/5)^2 * (B/100.) * (1/keV) * (mlt_extent/24.)  ;minutes
+	r = 5.5   ;Radius period in RE
+	B = 167.  ;Bo in nT
+	keV = 800. ;electron energy
+	mlt_extent = 1.   ;hours
+
+	;alternatively define extent in terms of km
+	mlt_extent_km = 600.
+	mlt_extent_360km = 2.*!pi*r*6370.
+	mlt_extent = 24.*mlt_extent_km/mlt_extent_360km ;hours
+
+	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent/24.)  ;minutes
+
+
+	;Calculation 2: find how far a particle drifts in a certain delta-time
+	Td = 3.7  ;sec
+
+	num = Td*100.*keV*24.
+	den = 60.*56.*(r/5.)^2 * B
+	mlt_extent = num/den/60.  ;hours
+	mlt_extent_km = 2.*!pi*r*6370.*(mlt_extent/24.)
+	print,mlt_extent
+	print,mlt_extent_km
+
+
+
+
 
 
 	;-------------------
@@ -579,7 +599,8 @@ vper2vpar = mu2 * B2Bo/(1-B2Bo*mu2)  ;NOTE THAT NEGATIVE VALUES MEAN THAT THE PA
 ;---VERSION 1 (find mlat where particle of certain equatorial PA will mirror)
 ;---Even though VERSION 2 asks for L-value, this is only to find Bo/Bmirror(mlat). this
 ;---ratio is actually L-independent
-pa = 10d ;equatorial particle pitch angle
+
+pa = 33d ;equatorial particle pitch angle
 mu = sin(pa*!dtor)
 mlat_turn = 90. - asin(mu^0.25)/!dtor
 print,mlat_turn
@@ -598,16 +619,29 @@ print,pa_max
 
 
 ;-----------------------------------------------------------------------------------------------
-;---bounce period for dipole field (http://farside.ph.utexas.edu/teaching/plasma/lectures/node22.html)
+;---bounce period for dipole field
 ang = 5.   ;PA at mag eq
 L = 5.0
-E = 250.      ;Energy in keV
+E = 500.      ;Energy in keV
 
-;electrons
+;electrons from Lenchek61
+y = sin(ang*!dtor)
+Tbe = 1.3802 - 0.3198*(y + sqrt(y))
+
+;electrons (http://farside.ph.utexas.edu/teaching/plasma/lectures/node22.html)
 Tbe = 5.62d-2 * L * (1-0.43*sin(ang*!dtor))/sqrt(E/1000.)    ;seconds
+print,Tbe
 
-;protons
+
+
+;protons (http://farside.ph.utexas.edu/teaching/plasma/lectures/node22.html)
 Tbi = 2.41 * L * (1-0.43*sin(ang*!dtor))/sqrt(E/1000.)       ;seconds
+
+;Bounce period from Walt (1994)
+b = 0.5  ;v/c
+Tbe = 0.117*(L/b)*(1 - 0.4635*sin(ang*!dtor)^(3/4.))
+
+
 ;---------------------------------------------------------------------------------------------------
 
 
@@ -648,14 +682,19 @@ fce_eq = fc0*cos(lat_foot*!dtor)^6
 
 
 
-;--------------------------------------------------
-;LOSS CONE
-;--------------------------------------------------
+
+;-------------------------------
+;LOSS CONE (EQUATORIAL) SIZE FOR DIPOLE FIELD
+;-------------------------------
+
+L = 5.6
+alpha = L^(-3/2.)*(4 - 3/L)^(-1/4.)/!dtor
+
 
 ;sin(alpha)^2 = Bo/Bmax    ;Gurnett eqn 3.4.23
 alpha = asin(sqrt(Bo/Bmax))/!dtor
 
-bdip = dipole(5.)
+bdip = dipole(5.5)
 
 alpha_5 = asin(sqrt(0.004))/!dtor
 alpha_3 = asin(sqrt(0.02))/!dtor
@@ -671,9 +710,10 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 
 
 
-;-----------------------
-;EARTH'S DENSITY PROFILE
-;-----------------------
+;-----------------------------------------------
+;EARTH'S DENSITY PROFILE AS A FUNCTION OF RADIUS
+;----also see Sheeley01 for a radial density model outside of PS
+;-----------------------------------------------
 
 	;Here's a very simple equatorial PS density model assuming that density
 	;falls off as 1/r^3 (Helliwell65 p 191,196)
@@ -688,6 +728,16 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	;e- density profile up to 90 km (Wait and Spies64)  -> also see Rodger and Nunn99
 	;For higher altitude models use the IRI.
 	n = 1.4265d13*exp(-0.15*h)*exp((bet-0.15)*(z-h_prime))
+
+
+;-------------------------------------------------------------------
+;DENSITY PROFILE ALONG FIELD LINE OUTSIDE OF PLASMASPHERE (DENTON06)
+;---note that density is *mostly* constant below about 30 deg mlat
+;-------------------------------------------------------------------
+
+mlat = 10.
+No = 10.
+Ne = No/cos(mlat*!dtor)^5
 
 
 
@@ -709,12 +759,12 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 	;WHISTLERS (electrons only)
 	;----------------------------
 
-		f=1000.  ;Hz
-		fpe = 8980.*sqrt(30)
-		fce = 28.*100.
-		thet = 0.
+		f=1200.  ;Hz
+		fpe = 8980.*sqrt(10)
+		fce = 28.*167.
+		thet = 30.
 		c=3e5
-		Ew = 14.37  ;mV/m
+		Ew = 4.  ;mV/m
 		;whistler dispersion for oblique, low freq whistlers
 		k = sqrt(4*!pi^2*fpe^2*f/(c^2*(fce*cos(thet*!dtor)-f)))
 		;Bw and Ew relation (nT and mV/m), c in km/sec for a FA, monochromatic plane wave whistler
@@ -798,6 +848,13 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 
 		Bx = -kpar/kperp * Bz
 		Bx = kpar*By/A1/(kpar - kperp/A2)
+
+
+
+	;----------------------------------------------------
+	;Whistler group velocity (flh<f<fce)
+	;....see Mourenas15 eqns 2, 3
+	;----------------------------------------------------
 
 
 	;----------------------------
