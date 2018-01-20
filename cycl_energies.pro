@@ -9,7 +9,14 @@
 ; OUTPUT: Total electron energy (keV) and field-aligned energy for both +/- resonance, as
 ;         well as respective velocities in km/s
 ;
-; NOTE: This has been tested against Lorentzen01 Plate 7 showing close agreement (see cycl_energies_test.pro)
+; NOTE: Testing comparisons:
+;         1) Tested against Lorentzen01 Plate 7 showing close agreement (see cycl_energies_test.pro)
+;         2) Further compared Lorentzen01 values from cycl_energies.pro to the calculation in
+;            Energy --> velocity conversion from plasma_params_crib.pro (this calculation
+;            I use in my raytracing routines to calculate time for particles to precipitate
+;            into the atmosphere from their loss cone scattering point...these in turn have
+;            been vetted against Alex's full Lorentz code calculations, which are known to
+;            be correct.)
 ;
 ; KEYWORDS:
 ;          pitchangle -> e- pitch angle (deg)  [array]
@@ -56,7 +63,7 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
 
 
 
-  me_ev  = 0.51d6       ; -Electron mass in eV/c^2
+  me_ev  = 0.51d6       ; -Electron rest mass in eV/c^2
   c2t = 1  ;speed of light squared. Cancels out from me_ev
   fpe = 8980.*sqrt(dens)
   w = 2d0*!dpi*freq
@@ -66,6 +73,18 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
 
   c_ms = 2.99792458d8      ; -Speed of light in vacuum (m/s)
   c_kms = c_ms/1000d0
+
+
+  ;calculate phase velocity of resonant wave. By comparing this to the resonant
+  ;velocity we can estimate how much pitch vs energy diffusion occurs.
+  ;Transforming to a frame where Ew disappears, the following condition
+  ;is true (Kennel69 eqn 23):
+  ;E' = (vpar - w/kpar)^2 + vperp^2
+  ;If resonant velocity is >> phase velocity (true for whistlers when f<<fce)
+  ;then this reduces to
+  ;E' = vpar^2 + vperp^2 = const --> no energy diffusion
+
+  vphase = w/(kmag*cos(theta_kb*!dtor))   ;km/s
 
 
   for qq=0,nrays-1 do begin
@@ -159,6 +178,7 @@ endfor
   vtotal_landau:vtots_l/1000.,$
   vz_cycl_counterstream:vzp/1000.,$
   vz_cycl_costream:vzm/1000.,$
-  vz_landau:vz_landau/1000.}
+  vz_landau:vz_landau/1000.,$
+  phase_velocity:vphase}
 
 end
