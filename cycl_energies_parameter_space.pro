@@ -3,8 +3,9 @@
 ; SYNTAX:
 ; PURPOSE: create a parameter space plot of relativistic cyclotron resonance energies as a function
 ; of wave freq, fce, density
-; INPUT: (see cycl_energies_parameter_space_call.pro. Tested against Lorentzen01, plate7 results)
+; INPUT: (see cycl_energies_parameter_space_call.pro.
 ; OUTPUT:
+; NOTES: Tested against Lorentzen01, plate7 results. See cycl_energies_test.pro
 ; KEYWORDS:
 ;          pa -> e- pitch angle (deg)
 ;          theta_k -> wave normal angle (deg)
