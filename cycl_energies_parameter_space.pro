@@ -138,6 +138,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
       for j=0L,n_elements(fce)-1 do begin
 
         kvec = sqrt(4*!pi^2*fpe[i]^2*freq/(c^2*(fce[j]*cos(theta_k*!dtor)-freq)))
+        ;kvec = 60.
         evals = cycl_energies(freq,theta_k,pa,fce[j],kvec,dens,nres)
 
         if type eq 'counterstream' then begin
@@ -162,6 +163,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
       for j=0L,n_elements(fce)-1 do begin
 
         kvec = sqrt(4.*!pi^2*fpe^2*freq[i]/(c^2*(fce[j]*cos(theta_k*!dtor)-freq[i])))
+        ;kvec = 60.
         evals = cycl_energies(freq[i],theta_k,pa,fce[j],kvec,dens,nres)
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
@@ -185,6 +187,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
       for j=0L,n_elements(dens)-1 do begin
 
         kvec = sqrt(4.*!pi^2*fpe[j]^2*freq[i]/(c^2*(fce*cos(theta_k*!dtor)-freq[i])))
+        ;kvec = 60.
         evals = cycl_energies(freq[i],theta_k,pa,fce,kvec,dens,nres)
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
