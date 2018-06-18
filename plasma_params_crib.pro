@@ -42,8 +42,8 @@
 ;--------------------------
 ;INPUT VALUES
 ;--------------------------
-B = 167. ;nT
-n = 12. ;cm-3
+B = 2. ;nT
+n = 10. ;cm-3
 Z = 1    ;charge state (number of unmatched e-)
 muu = 1  ;mi/mp
 
@@ -104,17 +104,23 @@ BnT2BG = 1e-5               ;nT to Gauss (multiply by this number)
 Hplus2e_mass = mp/me       ;H+ to electron mass ratio
 
 
-;-----------------------
-;YARDSTICKS
-;-------------------------
+;---------------------------------------------------
+;PHASE VELOCITY AND RESONANCE ENERGY FROM EW AND BW
+;---------------------------------------------------
 
 ;Transform from E, B to velocity
-E=VxB, where E(mV/m) = V(km/s) * B(nT)/1000
+;E=VxB, where E(mV/m) = V(km/s) * B(nT)/1000
 ;Test this. We see at RBSP perigee ~200-300 mV/m Vsc x B fields
 ;Vsc ~ 10 km/s,   B = 3d4 nT
-;E = 10.*3d4/1000. = 300 nT
+;E = 10.*3d4/1000. = 300 mV/m
 
-;Vph = E*1000/B
+Ew = 0.5  ;mV/m
+Bw = 150/1000. ;nT
+Vph = Ew*1000/Bw  ;km/s
+c_kms      = 2.99792458d5      ; -Speed of light in vacuum (m/s)
+E_keV = (0.511d6/sqrt(1-(vph^2/c_kms^2)) - 0.511d6)/1000.
+
+
 
 ;-------------------------
 ;USEFUL UNITS
@@ -328,19 +334,20 @@ d2 = d1/sqrt(Bratio)
 
 	r = 5.5   ;Radius period in RE
 	B = 167.  ;Bo in nT
-	keV = 800. ;electron energy
-	mlt_extent = 1.   ;hours
+	keV = 200. ;electron energy
+	mlt_extent_hrs = 1.   ;hours
 
-	;alternatively define extent in terms of km
-	mlt_extent_km = 600.
+;----
+	;alternatively, input MLT extent in km and solve for hours
+	mlt_extent_km = 9172.
 	mlt_extent_360km = 2.*!pi*r*6370.
-	mlt_extent = 24.*mlt_extent_km/mlt_extent_360km ;hours
+	mlt_extent_hrs = 24.*mlt_extent_km/mlt_extent_360km ;hours
+	;----
 
-	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent/24.)  ;minutes
-
+	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent_hrs/24.)  ;minutes
 
 	;Calculation 2: find how far a particle drifts in a certain delta-time
-	Td = 3.7  ;sec
+	Td = 1.1  ;sec
 
 	num = Td*100.*keV*24.
 	den = 60.*56.*(r/5.)^2 * B
@@ -516,7 +523,9 @@ mlat = atan(dz2,dr2)/!dtor
 
 
 ;MLT (I think this is technically calculated from GSM but GSE, GSM and SM give nearly
-;identical values...within 0.1 deg)
+;identical values NEAR THE MAGNETIC EQUATOR...within 0.1 deg)
+;WARNING...DO NOT USE FOR LEO SATELLITES. IN THIS CASE, USE GSM COORD AS INPUT
+;TO aaron_map_with_tsy.pro
 angle_tmp = atan(pos_gse_a.y[*,1],pos_gse_a.y[*,0])/!dtor
 goo = where(angle_tmp lt 0.)
 if goo[0] ne -1 then angle_tmp[goo] = 360. - abs(angle_tmp[goo])
@@ -671,7 +680,7 @@ fc0=886000.  ;kHz  cycl freq at mag eq on Earth's surface
 RE = 1.
 fce = fc0*(1+3*sin(mlat*!dtor)^2)^0.5 /(R/RE)^3  ;Hz
 
-;--equatorial cyclotron frequency value (worked out by Aaron from Btots equation)
+;--equatorial mapped cyclotron frequency value (worked out by Aaron from Btots equation)
 fce_eq = fce*cos(2*mlat*!dtor)^3/sqrt(1+3*sin(mlat*!dtor)^2)
 ;--equatorial cyclotron frequency from footpoint (Helliwell65 pg 182)
 fce_eq = fc0*cos(lat_foot*!dtor)^6
