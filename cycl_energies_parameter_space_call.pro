@@ -8,17 +8,17 @@
 ;(n~5-20, B~5-15).
 ;FREQS = 0.2fce and 0.3fce
 
-ps = 0     ;save to postscript?
+ps = 1     ;save to postscript?
 
-pa=0.        ;e- pitch angle
-theta_k=75.   ;wave normal angle
+pa=45.        ;e- pitch angle
+theta_k=45.   ;wave normal angle
 density_range = [5.,20.]   ;cm-3
 fce_range = 28d*[5.,15.]  ;Hz
 freq_range = [0.2*fce_range[0],0.3*fce_range[1]]    ;Hz (or f/fce if keyword is set)
 minval = 0.0      ;minimum energy plotted (keV) (total energy plot)
-maxval = 10.   ;maximum energy plotted (keV)
+maxval = 100.   ;maximum energy plotted (keV)
 minzval = 0.0    ;minimum energy plotted (keV) (FA energy plot)
-maxzval = 10.   ;maximum energy plotted (keV)
+maxzval = 100.   ;maximum energy plotted (keV)
 
 ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
 
@@ -33,21 +33,21 @@ ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
 cycl_energies_parameter_space,pa,theta_k,scheme=0,ps=ps,$
   minval=minval,maxval=maxval,minzval=minzval,maxzval=maxzval,$
   freqv=freq_range[0],fce_range=fce_range,density_range=density_range,$
-  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=5.
 
 
 ;scheme 1:  fce vs freq (at constant density)
 cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,$
   minval=minval,maxval=maxval,minzval=minzval,maxzval=maxzval,$
   densv=5.,fce_range=fce_range,freq_range=freq_range,$
-  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,/f_fce;,type='landau'
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=5.,/f_fce;,type='landau'
 
 
 ;scheme 2:  density vs freq (at constant fce)
 cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,$
   minval=minval,maxval=maxval,minzval=minzval,maxzval=maxzval,$
   fcev=fce_range[1],density_range=density_range,freq_range=freq_range,$
-  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,/f_fce;,type='landau'
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=5.,/f_fce;,type='landau'
 
 
 
