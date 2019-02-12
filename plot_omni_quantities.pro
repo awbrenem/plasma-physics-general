@@ -21,10 +21,12 @@
 ;KEYWORDS:
 ;   t0avg, t1avg --> start and stop times (strings like 2018-01-01/01:00:00) for averaging
 ;       solar wind density and velocity for the dynamic pressure comparisons (see above).
-
+;   smoothtime --> if set, smooth the clock, cone, IMF orientation, Bz_rat values over this amount of time (hrs)
+;
+;
 ;Returns tplot variables of useful quantities. 
 
-pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp
+pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp,smoothtime=smoothtime
 
     rbsp_efw_init
     omni_hro_load
@@ -39,7 +41,7 @@ pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp
     t0tmp = time_double(t0tmp)
     t1tmp = time_double(t1tmp)
 
-
+    if ~keyword_set(smoothtime) then smoothstr = 'no smoothing' else smoothstr = 'Smoothing='+string(smoothtime*60.,format='(f8.2)')+ ' min'
 
     ;Create |B| variable
     get_data,'OMNI_HRO_1min_BX_GSE',ttmp,bx
@@ -99,12 +101,19 @@ pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp
     store_data,'clockangle',ttmp,atan(by,bz)/!dtor
     store_data,'coneangle',ttmp,acos(bx/bmag)/!dtor
     store_data,'IMF_orientation',ttmp,atan(by,bx)/!dtor
-
     store_data,'Bz_rat',ttmp,abs(bz)/(sqrt(bx^2 + by^2)/2.)
 
 
+    if keyword_set(smoothtime) then begin 
+        rbsp_detrend,'clockangle',60.*60.*smoothtime & copy_data,'clockangle_smoothed','clockangle'
+        rbsp_detrend,'coneangle',60.*60.*smoothtime & copy_data,'coneangle_smoothed','coneangle'
+        rbsp_detrend,'IMF_orientation',60.*60.*smoothtime & copy_data,'IMF_orientation_smoothed','IMF_orientation'
+        rbsp_detrend,'Bz_rat',60.*60.*smoothtime & copy_data,'Bz_rat_smoothed','Bz_rat'
+
+    endif
 
     ;Various lines for overplotting on "IMF orientation", described in Petrinic13
+    store_data,'unityline',ttmp,replicate(1.,n_elements(bx))
     store_data,'nearperplineL',ttmp,replicate(70.,n_elements(bx))
     store_data,'nearperplineH',ttmp,replicate(110.,n_elements(bx))
     store_data,'nearperplinemL',ttmp,replicate(-70.,n_elements(bx))
@@ -121,24 +130,55 @@ pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp
     store_data,'betweenline2',ttmp,replicate(170.,n_elements(bx))
     options,'betweenline*','colors',50
 
+    store_data,'conepar1',ttmp,replicate(0.,n_elements(bx))    ;parallel 1
+    store_data,'conepar2',ttmp,replicate(24.,n_elements(bx))   ;parallel 2
+    store_data,'coneOPS1',ttmp,replicate(25.,n_elements(bx))  ;ortho Parker spiral1
+    store_data,'coneOPS2',ttmp,replicate(65.,n_elements(bx))  ;ortho Parker spiral1
+    store_data,'coneperp1',ttmp,replicate(66.,n_elements(bx))   ;Perp line 1
+    store_data,'coneperp2',ttmp,replicate(114.,n_elements(bx))  ;Perp line 2
+    store_data,'conePS1',ttmp,replicate(115.,n_elements(bx))    ;Parker spiral 1
+    store_data,'conePS2',ttmp,replicate(155.,n_elements(bx))    ;Parker spiral 2
+    store_data,'conepar3',ttmp,replicate(156.,n_elements(bx))    ;parallel 3
+    store_data,'conepar4',ttmp,replicate(180.,n_elements(bx))   ;parallel 4
+
+
+
+
     ;Various lines for overplotting on clock, cone angles
+
+    store_data,'PSline',ttmp,replicate(135.,n_elements(bx))  ;Parker spiral
+    store_data,'OrthoPSline',ttmp,replicate(45.,n_elements(bx)) ;Ortho Parker spiral
     store_data,'90line',ttmp,replicate(90.,n_elements(bx))
     store_data,'0line',ttmp,replicate(0.,n_elements(bx))
     store_data,'m90line',ttmp,replicate(-90.,n_elements(bx))
     store_data,'180line',ttmp,replicate(180.,n_elements(bx))
     store_data,'clockangle_comb',data=['clockangle','90line','0line','m90line','180line']
-    store_data,'coneangle_comb',data=['coneangle','90line','0line','m90line','180line']
+;    store_data,'coneangle_comb',data=['coneangle','90line','0line','m90line','180line','PSline','OrthoPSline']
+    store_data,'coneangle_comb',data=['coneangle','conepar1','conepar2','coneOPS1','coneOPS2','coneperp1','coneperp2','conePS1','conePS2','conepar3','conepar4']
+    options,['conepar1','conepar2','conepar3','conepar4'],'colors',50
+    options,['coneOPS1','coneOPS2'],'colors',200
+    options,['coneperp1','coneperp2'],'colors',250
+    options,['conePS1','conePS2'],'colors',0
+
     options,['90line','m90line','0line','180line'],'color',250
+    options,'OrthoPSline','color',250 & options,'PSline','color',85
+    options,'OrthoPSline','linestyle',3 & options,'PSline','linestyle',4
+    options,'clockangle_comb','ytitle','Clockangle!Catan(by/bz)!C0 faces N!C180 faces S!C'+smoothstr
+    options,'coneangle_comb','ytitle','Coneangle!Cacos(bx/|B|)!C0 faces sun!C 180 faces Earth!C135=ParkerSpiral!C45=OrthoParkerSpiral!C'+smoothstr
+
+
+    store_data,'Bz_rat_comb',data=['Bz_rat','unityline']
+    options,'Bz_rat_comb','ytitle','|Bz|/sqrt(bx2+by2)/2!C'+smoothstr
+    ylim,'Bz_rat_comb',0.001,10,1
 
 
     store_data,'IMF_orientation_comb',data=['IMF_orientation','nearperplineL','nearperplineH','nearperplinemL','nearperplinemH',$
     'nearPSline1','nearPSline2','nearPSline3','nearPSline4','betweenline1','betweenline2','betweenlinem1','betweenlinem2']
+    options,'IMF_orientation_comb','ytitle','IMForientation!Catan(by/bx)!CBlack=nearParkerSpiral!CRed=nearPerp!CBlue=nearParallel!C'+smoothstr
 
 
     if ~keyword_set(noplot) then begin
-        tplot,['IMF_orientation_comb','Bz_rat'] & stop
-        tplot,['IMF_orientation_comb','coneangle_comb'] & stop
-        tplot,['clockangle_comb','coneangle_comb','kyoto_ae','kyoto_dst','OMNI_HRO_1min_flow_speed'] & stop
+        tplot,['IMF_orientation_comb','Bz_rat_comb','clockangle_comb','coneangle_comb'] & stop
         tplot,['omni_press_dyn_smoothed','omni_press_dyn_smoothed_detrend'] & stop
     endif
 
