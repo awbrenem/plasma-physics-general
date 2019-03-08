@@ -155,9 +155,9 @@ pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp,smoothtime=smooth
     store_data,'clockangle_comb',data=['clockangle','90line','0line','m90line','180line']
 ;    store_data,'coneangle_comb',data=['coneangle','90line','0line','m90line','180line','PSline','OrthoPSline']
     store_data,'coneangle_comb',data=['coneangle','conepar1','conepar2','coneOPS1','coneOPS2','coneperp1','coneperp2','conePS1','conePS2','conepar3','conepar4']
-    options,['conepar1','conepar2','conepar3','conepar4'],'colors',50
+    options,['conepar1','conepar2','conepar3','conepar4'],'colors',250
     options,['coneOPS1','coneOPS2'],'colors',200
-    options,['coneperp1','coneperp2'],'colors',250
+    options,['coneperp1','coneperp2'],'colors',50
     options,['conePS1','conePS2'],'colors',0
 
     options,['90line','m90line','0line','180line'],'color',250
@@ -178,8 +178,7 @@ pro plot_omni_quantities,noplot=noplot,t0avg=t0tmp,t1avg=t1tmp,smoothtime=smooth
 
 
     if ~keyword_set(noplot) then begin
-        tplot,['IMF_orientation_comb','Bz_rat_comb','clockangle_comb','coneangle_comb'] & stop
-        tplot,['omni_press_dyn_smoothed','omni_press_dyn_smoothed_detrend'] & stop
+        tplot,['IMF_orientation_comb','Bz_rat_comb','clockangle_comb','coneangle_comb','omni_press_dyn_smoothed'];,'omni_press_dyn_smoothed_detrend']
     endif
 
 end 
