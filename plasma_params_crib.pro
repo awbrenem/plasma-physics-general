@@ -3,6 +3,7 @@
 
 ;--------------------------
 ;PLASMA PARAMETERS
+;MLT-UT conversion
 ;SHOCK QUANTITIES
 ;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
 ;Plasma drift values
@@ -29,7 +30,8 @@
 		;COLLISION CALCULATIONS
 		;MINIMUM PENETRATION FREQS OF IONOSPHERE
 ;Loss cone size
-
+;Dynamic pressure
+;SW clock and cone angles
 
 ;-------------------------------
 ;THINGS TO ADD: note that the units should be the same as those in plastic files: n=cm-3, Tp=K, Bt=nT
@@ -145,10 +147,11 @@ fce = 28.*B                                          ;electron cyclotron freq (H
 fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
 debye = 7.43e2*sqrt(Te)/sqrt(n)/100./1000.           ;Debye length (km) (for e- and ions)
 flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
-flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
+flhr2 = sqrt(abs(fce)*fci)							 						 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
 ;;flhr3 = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
-fuh = sqrt(fpe^2 + fce^2)							 ;Upper hybrid res freq (Hz)
-fx = fce/2. + 0.5*sqrt(fce^2 + 4*fpe^2)              ;x-mode frequency (Hz)
+fuh = sqrt(fpe^2 + fce^2)							 							 ;Upper hybrid res freq (Hz)
+fz = fce/2. + sqrt((fce/2.)^2 + fpe^2)							 ;z-mode lower freq (fz < f < fuh)
+fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;x-mode frequency (Hz)
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
 pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
 VA = 2.18e11*B*BnT2BG/sqrt(n)/100./1000.             ;H+ Alfven vel (km/s)
@@ -205,6 +208,14 @@ print,'beta_p = ' + strtrim(beta_p)
 print,'beta_t = ' + strtrim(beta_t)
 
 
+
+;---------------------------------------------
+;MLT-UT conversion factor
+;---------------------------------------------
+
+MLT = UT - 7 hrs
+
+
 ;---------------------------------------------------------------------------------
 ;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
 ;---------------------------------------------------------------------------------
@@ -212,7 +223,7 @@ print,'beta_t = ' + strtrim(beta_t)
 ;Find ratio of B2/B1 = A1/A2.
 
 alt = 500.   ;km
-L = 5.5
+L = 5.0
 Bo_mageq = 167.  ;nT
 
 dip = dipole(L)
@@ -225,7 +236,7 @@ Bo_km = dip.b[boo]
 Bratio = Bo_km/Bo_mageq
 
 ;diameter of flux tube at "alt"
-d1 = 2000. ;km
+d1 = 500. ;km
 d2 = d1/sqrt(Bratio)
 
 
@@ -334,8 +345,8 @@ d2 = d1/sqrt(Bratio)
 
 	r = 5.5   ;Radius period in RE
 	B = 167.  ;Bo in nT
-	keV = 200. ;electron energy
-	mlt_extent_hrs = 1.   ;hours
+	keV = 300. ;electron energy
+	mlt_extent_hrs = 24.   ;hours
 
 ;----
 	;alternatively, input MLT extent in km and solve for hours
@@ -347,7 +358,7 @@ d2 = d1/sqrt(Bratio)
 	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent_hrs/24.)  ;minutes
 
 	;Calculation 2: find how far a particle drifts in a certain delta-time
-	Td = 1.1  ;sec
+	Td = 60.*11.  ;sec
 
 	num = Td*100.*keV*24.
 	den = 60.*56.*(r/5.)^2 * B
@@ -716,7 +727,31 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 
 
 
+;-----------------------------------------------
+;SOLAR WIND (SW) CLOCK AND CONE ANGLES
+;-----------------------------------------------
 
+;^^Check the SW clock angle (GSE coord)
+;Clockangle: zero deg is along zGSE, 90 deg is along yGSE
+;...0 deg means northward IMF
+;...180 deg means southward IMF
+;Coneangle: zero deg is along xGSE, 90 along r=sqrt(yGSE^2+zGSE^2).
+;...this is nominally -45 deg or 135 deg for Parker spiral.
+;...zero or 180 deg means radial. This can be advantageous for SW structures
+;...propagating into the MS.
+bmag = sqrt(bxGSE^2 + byGSE^2 + bzGSE^2)
+store_data,'clockangle',ttmp,atan(byGSE,bzGSE)/!dtor
+store_data,'coneangle',ttmp,acos(bxGSE/bmag)/!dtor
+
+store_data,'90line',ttmp,replicate(90.,n_elements(bmag))
+store_data,'0line',ttmp,replicate(0.,n_elements(bmag))
+store_data,'m90line',ttmp,replicate(-90.,n_elements(bmag))
+store_data,'180line',ttmp,replicate(180.,n_elements(bmag))
+store_data,'clockangle_comb',data=['clockangle','90line','0line','m90line','180line']
+store_data,'coneangle_comb',data=['coneangle','90line','0line','m90line','180line']
+options,['90line','m90line','0line','180line'],'color',250
+
+tplot,['clockangle_comb','coneangle_comb']
 
 
 ;-----------------------------------------------
@@ -768,12 +803,12 @@ Ne = No/cos(mlat*!dtor)^5
 	;WHISTLERS (electrons only)
 	;----------------------------
 
-		f=1200.  ;Hz
-		fpe = 8980.*sqrt(10)
-		fce = 28.*167.
-		thet = 30.
+		f=80.  ;Hz
+		fpe = 8980.*sqrt(400.)
+		fce = 28.*200.
+		thet = 0.
 		c=3e5
-		Ew = 4.  ;mV/m
+		Ew = 5.  ;mV/m
 		;whistler dispersion for oblique, low freq whistlers
 		k = sqrt(4*!pi^2*fpe^2*f/(c^2*(fce*cos(thet*!dtor)-f)))
 		;Bw and Ew relation (nT and mV/m), c in km/sec for a FA, monochromatic plane wave whistler
@@ -1352,3 +1387,61 @@ endif
 		;X-mode
 		fminX1 = 0.5*(sqrt(fceM^2 + 4*fpeM^2) + fceM)  ;first root (normally observed when f<fceM)
 		fminX2 = 0.5*(sqrt(fceM^2 + 4*fpeM^2) - fceM)  ;second root
+
+
+	;-------------------------------
+	;DYNAMIC PRESSURE
+	;Calculate dynamic pressure as n*v^2
+	;From OMNIWeb:
+	;Flow pressure = (2*10**-6)*Np*Vp**2 nPa (Np in cm**-3,
+	;Vp in km/s, subscript "p" for "proton")
+	;--------------------------------------------------
+
+		split_vec,'wi_swe_V_GSE'
+
+		;Use these to find average values for pressure comparison.
+		t0tmp = time_double('2014-01-10/20:00')
+		t1tmp = time_double('2014-01-11/00:00')
+
+		get_data,'wi_swe_V_GSE_x',data=vv
+		get_data,'wi_Np',data=dd
+
+		tplot,['wi_dens_hires','wi_Np','wi_elect_density']
+
+
+		vsw = vv.y ;change velocity to m/s
+		dens = dd.y ;change number density to 1/m^3
+
+
+		;Pressure in nPa (rho*v^2)
+		press_proxy = 2d-6 * dens * vsw^2
+		store_data,'wi_press_dyn',data={x:vv.x,y:press_proxy}
+		;calculate pressure using averaged Vsw value
+		vtmp = tsample('wi_swe_V_GSE_x',[t0tmp,t1tmp],times=ttt)
+		vsw_mean = mean(vtmp,/nan)
+		press_proxy = 2d-6 * dens * vsw_mean^2
+		store_data,'wi_press_dyn_constant_vsw',data={x:vv.x,y:press_proxy}
+		;calculate pressure using averaged density value
+		ntmp = tsample('wi_Np',[t0tmp,t1tmp],times=ttt)
+		dens_mean = mean(ntmp,/nan)
+		press_proxy = 2d-6 * dens_mean * vsw^2
+		store_data,'wi_press_dyn_constant_dens',data={x:vv.x,y:press_proxy}
+
+		store_data,'wi_pressure_dyn_compare',data=['wi_press_dyn','wi_press_dyn_constant_dens','wi_press_dyn_constant_vsw']
+		ylim,'wi_pressure_dyn_compare',0,0
+		options,'wi_pressure_dyn_compare','colors',[0,50,250]
+
+		;Looks like the VARIATION of the dynamic pressure occurs because of the density fluctuations
+		tplot,'wi_pressure_dyn_compare'
+
+
+		;Detrend and apply the timeshift
+		rbsp_detrend,'wi_press_dyn',60.*5.
+		rbsp_detrend,'wi_press_dyn_smoothed',60.*60.
+		get_data,'wi_press_dyn_smoothed_detrend',ttmp,dtmp
+		store_data,'wi_press_dyn_smoothed_detrend',ttmp+(50.*60.),dtmp
+
+
+		;tplot,['wi_Np','wi_elect_density']+'_smoothed_detrend'
+		tplot,['wi_press_dyn_smoothed_detrend','wi_h0_mfi_bmag_smoothed_detrend','wi_h0_mfi_B3GSE_smoothed_detrend']
+		tplot,['fspc_comb_LX'],/add
