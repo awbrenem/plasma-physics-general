@@ -803,9 +803,9 @@ Ne = No/cos(mlat*!dtor)^5
 	;WHISTLERS (electrons only)
 	;----------------------------
 
-		f=80.  ;Hz
-		fpe = 8980.*sqrt(400.)
-		fce = 28.*200.
+		f=700.  ;Hz
+		fpe = 8980.*sqrt(10.)
+		fce = 28.*53.
 		thet = 0.
 		c=3e5
 		Ew = 5.  ;mV/m
@@ -819,7 +819,9 @@ Ne = No/cos(mlat*!dtor)^5
 		;in terms of vectors (not sure about units here)
 		Bw_vec = c/(2*!pi*f)*(crossp(kvec,Ew_vec))
 
-
+Bw = 50/1000.
+fce = 1500.
+f = fce/2.2
 		Ew = Bw*f*ckm/1000./sqrt(f*fce^2/(fce-f))
 
 
