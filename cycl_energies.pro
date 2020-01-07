@@ -97,7 +97,7 @@ function cycl_energies,freq,theta_kb,pitchangle,fce,kmag,dens,nres
   a = a1 + a2
 
 
-  b = 2.*w[qq]*kmag[*,qq]*cos_t[*,qq]
+  b = -2.*w[qq]*kmag[*,qq]*cos_t[*,qq]
 
   c1 = w[qq]^2
   c1 = replicate(c1,n)
