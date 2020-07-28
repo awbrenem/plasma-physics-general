@@ -35,8 +35,8 @@
 
 ;-------------------------------
 ;THINGS TO ADD: note that the units should be the same as those in plastic files: n=cm-3, Tp=K, Bt=nT
- ;entropy=log((tp**1.5)/np) ) - 6*log(10);
-    ;beta=np*10**(-5)*(469895.8 + 4.048*tp) / bt**2;
+;entropy=alog10((tp^1.5)/np) ) - 6*log(10)
+;beta=np*10^(-5)*(469895.8 + 4.048*tp)/bt^2
 ;-------------------------------
 
 
@@ -155,8 +155,8 @@ fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;x-mode frequency (Hz)
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
 pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
 VA = 2.18e11*B*BnT2BG/sqrt(n)/100./1000.             ;H+ Alfven vel (km/s)
-VA2 = fci/fpi*3e5                                    ;Alternate H+ Alfven vel (km/s)
 VAe = VA * sqrt(1836.)                               ;electron Alfven vel (km/sec)
+VA2 = fci/fpi*3e5                                    ;Alternate H+ Alfven vel (km/s)
 e_inertial = 5.31/sqrt(n)                            ;e- inertial length (skin depth) (km) - VERIFIED
 e_inertial2 = Vae/2./!pi/fce					     ;alternate formulation (km)
 ion_inertial = 2.28e7*sqrt(muu)/(Z*sqrt(n))/100./1000. ;Ion inertial length (km)
@@ -216,6 +216,26 @@ print,'beta_t = ' + strtrim(beta_t)
 MLT = UT - 7 hrs
 
 
+
+;-------------------------------------------------------------
+;E/B and cB/E ratios
+;-------------------------------------------------------------
+
+;E in V/m, B in Tesla
+;Tesla = kg/s^2/A
+;Volt = kg*m^2/s^3/A
+
+;So, V/m / Tesla = m/s
+
+;If we let E be in V/m and B in T, then
+c=3d8
+cB_E = c/1d9/E_B
+;(e.g. see comparison w/ Agapitov work)
+
+
+
+
+
 ;---------------------------------------------------------------------------------
 ;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
 ;---------------------------------------------------------------------------------
@@ -239,8 +259,25 @@ Bratio = Bo_km/Bo_mageq
 d1 = 500. ;km
 d2 = d1/sqrt(Bratio)
 
+;-----------------------------------------------
+;CHANGE IN PITCH ANGLE DUE TO RADIAL MOTION WHILE CONSERVING
+;1ST AND 2ND ADIABATIC INVARIANTS.
+;e.g. Halford15; Rae18 (eqn2)
+;PA will increase as particles move inwards. However, this increase will be
+;smaller than the increase in the BLC size, allowing additional e- to
+;precipitate
+Lf = 8.
+Li = 11.
+aeq0 = 2.*!dtor    ;initial e- pitch angle
+num1 = -1.*sqrt(Lf)*cos(aeq0)^2
+den1 = 2.*sqrt(Li)*sin(aeq0)
+num2 = Lf*cos(aeq0)^4
+den2 = Li*sin(aeq0)^2
 
-
+saeqf = (num1/den1) + 0.5*sqrt((num2/den2)+4.)
+aeqf = asin(saeqf)/!dtor
+print,'Initial e- pitch angle is',aeq0/!dtor
+print,'Final e- pitch angle is ',aeqf
 
 ;---------------------------------------------------------------------------------
 ;SHOCK QUANTITIES
@@ -340,12 +377,14 @@ d2 = d1/sqrt(Bratio)
 
 	;--------------------------------------------
 	;Drift period of particle around Earth (Kivelson eqn 10.6)
-	;Dipole field, grad/curvature drift
+	;Dipole field, grad/curvature drift. This is a rough estimate
+	;assuming a 45 deg particle, where the grad and curv drifts are about
+	;the same magnitude. This may not be true for other PAs.
   ;--------------------------------------------
 
-	r = 5.5   ;Radius period in RE
-	B = 167.  ;Bo in nT
-	keV = 300. ;electron energy
+	r = 8.   ;Radius period in RE
+	B = 67.  ;Bo in nT
+	keV = 200. ;electron energy
 	mlt_extent_hrs = 24.   ;hours
 
 ;----
@@ -705,14 +744,21 @@ fce_eq = fc0*cos(lat_foot*!dtor)^6
 
 ;-------------------------------
 ;LOSS CONE (EQUATORIAL) SIZE FOR DIPOLE FIELD
+;NOTE: the BLC size is a small function of energy (see Fig 4 in Bob Marshall and Bortnik 2018)
 ;-------------------------------
 
-L = 5.6
+L = 8.
 alpha = L^(-3/2.)*(4 - 3/L)^(-1/4.)/!dtor
 
 
 ;sin(alpha)^2 = Bo/Bmax    ;Gurnett eqn 3.4.23
 alpha = asin(sqrt(Bo/Bmax))/!dtor
+
+
+Bmax = 100.
+Bo = Bmax/100. + 1.
+alpha = asin(sqrt(Bo/Bmax))/!dtor
+
 
 bdip = dipole(5.5)
 
@@ -724,6 +770,13 @@ alpha_3 = asin(sqrt(0.02))/!dtor
 ;;       3.62612
 ;; RBSP_EFW> print,alpha_3
 ;;       8.13010
+
+;-------------------------------------
+;MODULATION OF LOSS CONE CAUSED BY ULF WAVES (Rae)
+;-------------------------------------
+
+;See eqn 2.2 in Brito et al., in the Jaynes anthology.
+
 
 
 
