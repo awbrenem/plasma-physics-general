@@ -4,6 +4,7 @@
 ;--------------------------
 ;PLASMA PARAMETERS
 ;MLT-UT conversion
+;Change in L due to an azimuthal electric field impulse leading to radially inward ExB drift.
 ;SHOCK QUANTITIES
 ;MAGNETIC FIELD FOCUSING EFFECT (DIPOLAR FIELD)
 ;Plasma drift values
@@ -165,8 +166,12 @@ Ve = 4.19e7*sqrt(Te)/100./1000.                      ;e- thermal vel (km/s)
 Vi = 9.79e5*sqrt(Ti/muu)/100./1000.                  ;Ion thermal vel (km/s)
 Cs_i = 9.79e5*sqrt(gamai*Z*Te/muu)/100./1000.        ;Ion sound vel (km/s)
 Cs_i2 = sqrt((Te+3*Ti)/mp_ev)
-;vel_ion = 1.4d*sqrt(ion_eV)                          ;velocity of ion in terms of ion energy in eV (km/s)
-;vel_elec = 5.9d2*sqrt(elec_eV)                       ; ''         electron ''        ''            (km/s)
+
+;Since 1 eV = 1.6d-19 Joules, the energy in Joules is e1eV*Energy_eV.
+;from E = 1/2 m*v^2 (Joules) we then have
+vel_elec = sqrt(2*e1eV*elec_eV/me)/1000.    ;km/s
+vel_ion = sqrt(2*e1eV*elec_eV/mi)/1000.     ;km/s
+
 mepp = (B*BnT2BG)^2/8./!pi/n * erg2joule /e1ev       ;characteristic magnetic energy per particle (eV) - which particles will cyclotron interact
 beta_p = 4.03e-11*n*Ti/((B*BnT2BG)^2)                ;Proton beta
 beta_e = 4.03e-11*n*Te/((B*BnT2BG)^2)                ;electron beta
@@ -234,6 +239,109 @@ cB_E = c/1d9/E_B
 
 
 
+
+;---------------------------------------------------------------------------------
+;CALCULATE THE CHANGE IN ENERGY OF AN ELECTRON DUE TO
+;1) TIME RATE OF CHANGES IN THE MAGNETIC FIELD WHILST SATISFYING FIRST ADIABATIC INVARIANT
+;2) GUIDING CENTER VELOCITY COMPONENT ALONG E
+
+;For example, this can be used to calculate the change in energy (bounce-averaged)
+;of e- due to solar wind compressions (Roederer70 eqn 3.37; Northrop63 eqn7)
+;that cause inductive Efield
+;*****TESTED, AND I THINK IS WORKING FINE
+;---------------------------------------------------------------------------------
+
+	;****(TERM 1)**************************************************************************
+	;First term (gyro betatron). Dominates when the rate of compression is fast or on the
+	;order of the drift period (but slow compared to bounce period).
+	;Particle doesn't get a chance to gradient/curvature drift too much before this
+	;energization occurs.
+	;THIS IS CORRECT --> compares nearly exactly to the Wygant98 expression below.
+
+	B = 60. ;nT  (B cancels out in T2, so can have in whatever units you want, as long as they're the same for B and dB_dt)
+	dB_dt = 9./1800.   ;(nT/sec)
+
+	me     = 9.1093897d-31     ; -Electron mass (kg)
+	e1eV = 1.6e-19              ;joules in 1 eV
+
+	elec_eV = 30.*1000.
+	;perp velocity of electron gyromotion
+	vel_elec = sqrt(2*e1eV*elec_eV/me)   ;m/s
+
+	;Roederer70 eqn 1.26
+	M = 0.5*me*(vel_elec^2)/B   ;1st adiabatic invariant in J/nT
+	T2 = M*dB_dt
+	T2eV = T2/e1eV ;energization rate (eV/sec)
+
+
+	;****(TERM 2)**************************************************************************
+	;drift betatron. Dominates when the rate of compression is slow
+	;compared to the drift period)
+
+	L = 8.
+	td = 192.*60.  ;sec for 30 keV
+;	td = 19.*60.  ;sec for 300 keV
+	Vgc = 2.*!pi*L*6370./td    ;km/s  (guiding center velocity)
+	Vgc *= 1000.  ;m/s
+
+	Eind = 0.2/1000.  ;V/m
+	qq     = 1.60217733d-19    ; -Fundamental charge (C)
+
+	T1 = qq*Vgc*Eind   ;Joules/sec
+	T1eV = T1/e1eV  ;energization rate (eV/sec)
+
+
+
+	;***************************************************************
+	;Extra credit: Either of these terms may be neglected, depending on whether
+	;the change is "fast" or "slow" compared with drift period. Roederer70 eqn 3.36
+	B2dBdt = B/dB_dt/60.    ;minutes
+	;***************************************************************
+
+
+
+	;Now calculate how much time an electron is exposed to this energization
+	;T1 alternative (how much energy will a particle get accelerating through potential drop)
+	frac_orbit = 1/8.
+	d = 2*!pi*L*6370.*frac_orbit
+	T1eV_gain = d*Eind    ;eV gain over entire traversal
+
+
+
+
+	print,'Energy gain due to changing Bo = ',T2eV,' eV'
+	print,'Energy gain due to Einductive * Vgc drift = ',T1ev, ' eV'
+	print,'Energy gain due to Einductive * Vgc drift (alternative) = ',T1ev_2, ' eV'
+
+
+;--------------------------------------------------------------------------------
+;Change in L due to an azimuthal electric field impulse (mV/m)*min [Wygant98]
+;leading to radially inward ExB drift.
+;The calculated energy change is that due to conservation of first adiabatic
+;invariant in a time-changing Bo   partial(B)/partial(t).
+;This is the same as the M*dB/dt term above from Roederer70.
+
+;I'm actually using Eqn 1 from Halford 15 since this makes more sense to me.
+;WORKS: Results recreate the plot in Wygant98 --> this
+;NOTE: this doesn't account for any acceleration caused by a component of the
+;drift velocity along an electric field (q*v*E from Roederer70, above).
+;--------------------------------------------------------------------------------
+
+	Re = 6370.*1000.   ;Earth radius in m
+	Bo = 0.3d-4   ;Tesla   Earth's magnetic field at surface at magnetic eq
+	Lo = 8.       ;Starting lshell
+	E = 0.2/1000.  ;V/m    Azimuthal E-field driving radial ExB motion
+	dt = 30.*60.    ;sec     Duration of E-field
+	Edt = E*dt     ;impulse of E-field   in V/m * sec
+	;Edt = 60.*E*dt/1000.
+
+	num = Re*Bo*Lo^2
+	den = 2*Edt*Lo^2 + Re*Bo
+	Lf = sqrt(num/den)    ;final L shell of particle due to inward ExB drift
+
+	;Now calculate the energization (Wf/Wo) due to this radial motion and conservation of
+	;the first adibatic invariant [Wygant94]
+	Wf_Wo = (Lo/Lf)^(3/2.)
 
 
 ;---------------------------------------------------------------------------------
@@ -375,6 +483,24 @@ print,'Final e- pitch angle is ',aeqf
 ;----------------------------------------------------------------------------------
 
 
+	;--------------------------------------------------
+	;Drift period from Roederer70, eqn 1.53
+	;--------------------------------------------------
+
+;	BE = 30438. ;nT  at earth's surface at magnetic eq.
+;	RE = 6370.
+;	qq     = 1.60217733d-19    ; -Fundamental charge (C)
+;	me     = 9.1093897d-31     ; -Electron mass (kg)
+;
+;	Bo = 70.  ;local Bmag value
+;	Rs = 10*RE   ;magnetopause standoff distance
+;
+;	b1 = 25.*(10./Rs)^3  ;nT
+;	v =
+;
+;	t1 = 4*!pi*qq*RE^2/(3*me*v^2)
+
+
 	;--------------------------------------------
 	;Drift period of particle around Earth (Kivelson eqn 10.6)
 	;Dipole field, grad/curvature drift. This is a rough estimate
@@ -384,8 +510,24 @@ print,'Final e- pitch angle is ',aeqf
 
 	r = 8.   ;Radius period in RE
 	B = 67.  ;Bo in nT
-	keV = 200. ;electron energy
+	keV = indgen(3000.);20. ;electron energy
 	mlt_extent_hrs = 24.   ;hours
+	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent_hrs/24.)  ;minutes
+
+
+	;Determine which of these is violating the 3rd a.i. (Roederer70, eqn )
+	Bmag = 70.
+	dB_dt = 20./3600.   ;time rate of change of magnetic field
+	B2dB = Bmag/dB_dt/60.  ;minutes
+	print,'B2dB'
+	;Adiabatic when Tdrift << B2dB
+
+	for i=0,499 do print,'E(keV)=',kev[i], 'Tdrift(min)=',Td[i]
+
+
+
+
+
 
 ;----
 	;alternatively, input MLT extent in km and solve for hours
@@ -394,10 +536,9 @@ print,'Final e- pitch angle is ',aeqf
 	mlt_extent_hrs = 24.*mlt_extent_km/mlt_extent_360km ;hours
 	;----
 
-	Td = 60. * 56.*(r/5.)^2 * (B/100.) * (1./keV) * (mlt_extent_hrs/24.)  ;minutes
 
 	;Calculation 2: find how far a particle drifts in a certain delta-time
-	Td = 60.*11.  ;sec
+	Td = 60.*28.  ;sec
 
 	num = Td*100.*keV*24.
 	den = 60.*56.*(r/5.)^2 * B
@@ -423,13 +564,13 @@ print,'Final e- pitch angle is ',aeqf
 	;Grad-B drift  (km/s)   [Wperp * (B x gradB)/(qB^3)]
 	m = me       ;mass (kg)
 	q = e        ;charge (C)
-	Bmag = 10.   ;(nT)
+	Bmag = 70.   ;(nT)
 
 	;now enter either perp velocity or perp energy of gyrating particle
 		vperp = xxx  ;Perp velocity of particle (km/s)
 		Wperp = 0.5*m*vperp^2
 
-	angle = 0.   ;angle b/t Bo and grad-B (deg)
+	angle = 90.   ;angle b/t Bo and grad-B (deg)
 	L = 10  ;gradient scale size (km)
 
 	Vgb = Wperp*sin(angle*!dtor)/(q*Bmag*L)
