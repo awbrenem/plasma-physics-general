@@ -1,9 +1,9 @@
 ;General routine to calculate ExB velocity
-;See specific crib sheets for various sc, like exb_velocity_rbsp_crib.pro 
+;See specific crib sheets for various sc, like exb_velocity_rbsp_crib.pro
 ;to call this routine.
 
 
-pro exb_velocity_rbsp_crib
+;pro exb_velocity_rbsp_crib
 
     rbsp_efw_init
     date = '2014-01-11'
@@ -14,14 +14,14 @@ pro exb_velocity_rbsp_crib
     timespan,date
 
 
-;load ephemeris data 
+;load ephemeris data
     rbsp_efw_position_velocity_crib
     get_data,'rbsp'+sc+'_state_pos_gse',data=pos
     r = SQRT(pos.y[*,0]^2+pos.y[*,1]^2+pos.y[*,2]^2)/6371.
-    store_data,'r',data={x:pos.x,y:r} 
+    store_data,'r',data={x:pos.x,y:r}
 
     get_data,'rbsp'+sc+'_spinaxis_direction_gse',data=wgse
-    rbsp_gse2mgse,'rbsp'+sc+'_state_pos_gse',reform(wgse.y[0,*]),newname='pos_mgse'	
+    rbsp_gse2mgse,'rbsp'+sc+'_state_pos_gse',reform(wgse.y[0,*]),newname='pos_mgse'
 
 
 ;Load EMFISIS L3 magnetic field GSE
@@ -29,10 +29,10 @@ pro exb_velocity_rbsp_crib
     get_data,'rbsp'+sc+'_emfisis_l3_4sec_gse_Mag',data=Bmag_l3
     store_data,'Mag_gse',data=Bmag_l3
     rbsp_gse2mgse,'Mag_gse',reform(wgse.y[0,*]),newname='Mag_mgse'
-      
-    
 
-;load E field 
+
+
+;load E field
     rbsp_efw_edotb_to_zero_crib,date,sc
     tplot,['rbsp'+sc+'_efw_esvy_mgse_vxb_removed_coro_removed_spinfit_edotb']
     get_data,'rbsp'+sc+'_efw_esvy_mgse_vxb_removed_coro_removed_spinfit_edotb',data=E_sf
@@ -41,7 +41,7 @@ pro exb_velocity_rbsp_crib
     etimes=E_sf.x
     Ex = (E_sf.y)[*,0] & Ey = (E_sf.y)[*,1] & Ez = (E_sf.y)[*,2]
 
-    r = interp(r,pos.x,etimes,/no_extrap)    
+    r = interp(r,pos.x,etimes,/no_extrap)
     Ex[where(r lt 2.5)] = !values.f_nan & Ey[where(r lt 2.5)] = !values.f_nan & Ez[where(r lt 2.5)] = !values.f_nan
 
     store_data,'Ex-mgse!Cspinfit!Cvxb-sub!Ccorot-frame!CmV/m',data={x:etimes,y:Ex},dlim={constant:[0]}
@@ -104,7 +104,7 @@ pro exb_velocity_rbsp_crib
 
 
 
-    ;put E field and ExB velocities in FAC coordinates 
+    ;put E field and ExB velocities in FAC coordinates
     nb= n_elements(Bx_bkgrd)
     bg_field = fltarr(nb,3)
     bg_field[*,0]  = Bx_bkgrd/B_field_mag & bg_field[*,1]  = By_bkgrd/B_field_mag & bg_field[*,2]  = Bz_bkgrd/B_field_mag
@@ -175,7 +175,7 @@ pro exb_velocity_rbsp_crib
 
     inteadt = total(E_perp_1,/nan,/cumulative)*find_datarate(etimes)
 
-    store_data,'Time-Int!CE-azimuthal!CmV/m-s',data={x:etimes,y:inteadt},dlim={constant:[0]}   
+    store_data,'Time-Int!CE-azimuthal!CmV/m-s',data={x:etimes,y:inteadt},dlim={constant:[0]}
 
 
 
