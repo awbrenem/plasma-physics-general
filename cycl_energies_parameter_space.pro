@@ -73,6 +73,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   if ~keyword_set(minval) and KEYWORD_SET(zlog) then minval = 0.1                ;keV
   if ~keyword_set(maxzval) then maxzval = 500.                ;keV
   if ~keyword_set(minzval) and KEYWORD_SET(zlog) then minzval = 0.1                ;keV
+  if ~keyword_set(minzval) and ~KEYWORD_SET(zlog) then minzval = 0.                ;keV
 
 
 ;  if ~KEYWORD_SET(zlog) then zlog = 0. else zlog = 1.
