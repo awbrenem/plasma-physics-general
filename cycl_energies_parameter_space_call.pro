@@ -1,5 +1,69 @@
 ;Crib sheet for calling cycl_energies_parameter_space.pro
 
+;TIP: **** if you don't know what energy range to request, then don't request one. 
+;Program will automatically figure it out. 
+
+
+;-------------------------------
+;Scheme 3 testing
+;-------------------------------
+
+dens = 10. 
+nres = 1.
+pa = 0.
+fce = 28.*100.
+
+;scheme 3:  freq vs theta_kb (at constant fce, dens)
+cycl_energies_parameter_space,pa,scheme=3,ps=ps,$
+  fcev=fce,density_range=density_range,freq_range=freq_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='counterstream';,$
+;  minval=1.,maxval=2.,minzval=minzval,maxzval=500.
+
+
+
+
+;--------------------------------------------------
+;Aaron BARREL Paper 3 calculation for waves near flh
+;--------------------------------------------------
+
+;(n~1-5, B~57-80).
+;FREQS = 0.2fce and 0.3fce
+
+ps = 0     ;save to postscript?
+
+pa=5.        ;e- pitch angle
+theta_k=0.   ;wave normal angle
+density_range = [1.,10.]   ;cm-3
+fce_range = 28d*[74.,76.]  ;Hz
+freq_range = [40,80]    ;Hz (or f/fce if keyword is set)
+;freq_range = [0.02,0.04]    ;Hz (or f/fce if keyword is set)
+minval = 0.0      ;minimum energy plotted (keV) (total energy plot)
+maxval = 100.   ;maximum energy plotted (keV)
+minzval = 0.0    ;minimum energy plotted (keV) (FA energy plot)
+maxzval = 100.   ;maximum energy plotted (keV)
+
+ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
+
+
+
+;scheme 2:  density vs freq (at constant fce)
+cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,$
+  fcev=fce_range[1],density_range=density_range,freq_range=freq_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='counterstream';,$
+;  minval=minval,maxval=maxval,minzval=minzval,maxzval=maxzval,$
+
+  minval = 0.0      ;minimum energy plotted (keV) (total energy plot)
+  maxval = 2.   ;maximum energy plotted (keV)
+  minzval = 0.0    ;minimum energy plotted (keV) (FA energy plot)
+  maxzval = 2.   ;maximum energy plotted (keV)
+
+  cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,$
+    fcev=fce_range[1],density_range=density_range,freq_range=freq_range,$
+    ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='landau';,$
+;    minval=minval,maxval=maxval,minzval=minzval,maxzval=maxzval,$
+
+
+
 
 ;--------------------------------------------------
 ;CINDY AND LINDSAY LWS PROPOSAL (SW ENERGIES)
@@ -246,25 +310,28 @@ ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
 ;--------------------------------------------------
 
 x = cold_dispersion(epol=1,freq=22361.,dens=10000.,Bo=800.)
-function cold_dispersion,epol=epol,freq=freq,dens=dens,Bo=Bo,H_plus=pH,He_plus=pHe,O_plus=pO
+;function cold_dispersion,epol=epol,freq=freq,dens=dens,Bo=Bo,H_plus=pH,He_plus=pHe,O_plus=pO
 
 res_angle_max = acos(max(freq_range)/min(fce_range))/!dtor  ;resonance cone angle
 res_angle_min = acos(min(freq_range)/max(fce_range))/!dtor  ;resonance cone angle
 ;--------------------------------------------------
 
 ;scheme 0:  fce vs density (at constant wave freq)
-cycl_energies_parameter_space,pa,theta_k,scheme=0,ps=ps,minval=minval,maxval=maxval,$
+theta_k = 0.
+cycl_energies_parameter_space,pa,theta_k,scheme=0,ps=ps,$
                               freqv=22361.,fce_range=fce_range,density_range=density_range,$
                               ndens=ndens,nfce=nfce,nfreq=nfreq,type='landau'
+;                              minval=minval,maxval=maxval
 
 
 ;scheme 1:  fce vs freq (at constant density)
-cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,minval=minval,maxval=maxval,$
+cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,$
                               densv=2000.,fce_range=fce_range,freq_range=freq_range,$
-                              ndens=ndens,nfce=nfce,nfreq=nfreq;,type='landau'
-
+                              ndens=ndens,nfce=nfce,nfreq=nfreq;,$
+;                              minval=minval,maxval=maxval
 
 ;scheme 2:  density vs freq (at constant fce)
-cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,minval=minval,maxval=maxval,$
+cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,$
                               fcev=22400.,density_range=density_range,freq_range=freq_range,$
-                              ndens=ndens,nfce=nfce,nfreq=nfreq;,type='landau'
+                              ndens=ndens,nfce=nfce,nfreq=nfreq;,$
+;                              minval=minval,maxval=maxval

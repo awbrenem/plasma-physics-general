@@ -3,19 +3,24 @@
 ; SYNTAX:
 ; PURPOSE: create a parameter space plot of relativistic cyclotron resonance energies as a function
 ; of wave freq, fce, density
-; INPUT: (see cycl_energies_parameter_space_call.pro.
+; INPUT: see cycl_energies_parameter_space_call.pro
 ; OUTPUT:
 ; NOTES: Tested against Lorentzen01, plate7 results. See cycl_energies_test.pro
+;
+;        If you're not sure what energy range to set for the plot (maxval, minval; maxzval, minzval) 
+;        then just call program without those keywords set. 
+;
 ; KEYWORDS:
 ;          pa -> e- pitch angle (deg)
-;          theta_k -> wave normal angle (deg)
-;          scheme -> 0, 1 or 2
+;          theta_kb -> wave normal angle (deg)
+;          scheme -> 0, 1, 2, 3
 ;                scheme 0:  fce vs density (at constant wave freq)
 ;                scheme 1:  fce vs freq (at constant density)
 ;                scheme 2:  density vs freq (at constant fce)
+;                scheme 3:  freq vs theta_kb (at constant fce, dens)
 ;          ps -> plot to postscript (outputs to desktop)
-;          maxval -> max energy. Sets colorbar resolution (keV)
-;          minval -> min energy. Sets colorbar resolution (keV)
+;          maxval -> max energy ("Etots"). Sets colorbar resolution (keV)
+;          minval -> min energy ("Etots"). Sets colorbar resolution (keV)
 ;          maxzval -> same but for Ez energy
 ;          minzval ->
 ;          density_range -> range of axis densities (cm-3)
@@ -44,11 +49,12 @@
 
 
 
-pro cycl_energies_parameter_space,pa,theta_k,$
+pro cycl_energies_parameter_space,pa,theta_kb,$
   scheme=scheme,ps=ps,$
   minval=minval,maxval=maxval,$
   minzval=minzval,maxzval=maxzval,$
   density_range=density_range,$
+  thetakb_range=thetakb_range,$
   fce_range=fce_range,freq_range=freq_range,$
   ndens=ndens,nfce=nfce,nfreq=nfreq,$
   densv=dens,fcev=fce,freqv=freq,$
@@ -68,12 +74,6 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   if ~keyword_set(scheme) then scheme = 0
 
 
-  ;Choose upper colorbar range (keV) (don't waste the colors plotting energies above this)
-  if ~keyword_set(maxval) then maxval = 500.                ;keV
-  if ~keyword_set(minval) and KEYWORD_SET(zlog) then minval = 0.1                ;keV
-  if ~keyword_set(maxzval) then maxzval = 500.                ;keV
-  if ~keyword_set(minzval) and KEYWORD_SET(zlog) then minzval = 0.1                ;keV
-  if ~keyword_set(minzval) and ~KEYWORD_SET(zlog) then minzval = 0.                ;keV
 
 
 ;  if ~KEYWORD_SET(zlog) then zlog = 0. else zlog = 1.
@@ -123,12 +123,33 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     freq = (freq_range[1]-freq_range[0])*indgen(nfreq)/(nfreq-1) + freq_range[0]
     ;if keyword_set(f_fce) then freq *= fce
     dens = (density_range[1]-density_range[0])*indgen(ndens)/(ndens-1) + density_range[0]
+  endif
+
+
+  if scheme eq 3 then begin
+
+    if ~keyword_set(freq_range) then begin
+      if ~keyword_set(f_fce) then freq_range = [80.,300.]       ;Hz
+      if keyword_set(f_fce) then  freq_range = [0.,2.]  ;unitless f/fce
+    endif
+    if ~keyword_set(thetakb_range) then thetakb_range = [0.,90.]
+
+    ;Number of freq and theta_kb array elements (resolution)
+    if ~keyword_set(nfreq) then nfreq = 20.
+    if ~keyword_set(nthetakb) then nthetakb = 20.
+
+    freq = (freq_range[1]-freq_range[0])*indgen(nfreq)/(nfreq-1) + freq_range[0]
+    theta_kb = (thetakb_range[1]-thetakb_range[0])*indgen(nthetakb)/(nthetakb-1) + thetakb_range[0]
 
   endif
 
 
-  Etots = fltarr(nfreq,ndens)
+  if scheme eq 0 then Etots = fltarr(nfce,ndens)
+  if scheme eq 1 then Etots = fltarr(nfce,nfreq)
+  if scheme eq 2 then Etots = fltarr(ndens,nfreq)
+  if scheme eq 3 then Etots = fltarr(nthetakb,nfreq)
   Ez = Etots
+
 
   fpe = 8980d*sqrt(dens)
   c=3d5
@@ -138,9 +159,8 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     for i=0L,n_elements(dens)-1 do begin
       for j=0L,n_elements(fce)-1 do begin
 
-        kvec = sqrt(4*!pi^2*fpe[i]^2*freq/(c^2*(fce[j]*cos(theta_k*!dtor)-freq)))
-        ;kvec = 60.
-        evals = cycl_energies(freq,theta_k,pa,fce[j],kvec,dens,nres)
+        kvec = sqrt(4*!pi^2*fpe[i]^2*freq/(c^2*(fce[j]*cos(theta_kb*!dtor)-freq)))
+        evals = cycl_energies(freq,theta_kb,pa,fce[j],kvec,dens,nres)
 
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
@@ -163,9 +183,8 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     for i=0L,n_elements(freq)-1 do begin
       for j=0L,n_elements(fce)-1 do begin
 
-        kvec = sqrt(4.*!pi^2*fpe^2*freq[i]/(c^2*(fce[j]*cos(theta_k*!dtor)-freq[i])))
-        ;kvec = 60.
-        evals = cycl_energies(freq[i],theta_k,pa,fce[j],kvec,dens,nres)
+        kvec = sqrt(4.*!pi^2*fpe^2*freq[i]/(c^2*(fce[j]*cos(theta_kb*!dtor)-freq[i])))
+        evals = cycl_energies(freq[i],theta_kb,pa,fce[j],kvec,dens,nres)
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
           Etots[i,j] = evals.e_cycl_counterstream
@@ -187,9 +206,8 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     for i=0L,n_elements(freq)-1 do begin
       for j=0L,n_elements(dens)-1 do begin
 
-        kvec = sqrt(4.*!pi^2*fpe[j]^2*freq[i]/(c^2*(fce*cos(theta_k*!dtor)-freq[i])))
-        ;kvec = 60.
-        evals = cycl_energies(freq[i],theta_k,pa,fce,kvec,dens,nres)
+        kvec = sqrt(4.*!pi^2*fpe[j]^2*freq[i]/(c^2*(fce*cos(theta_kb*!dtor)-freq[i])))
+        evals = cycl_energies(freq[i],theta_kb,pa,fce,kvec,dens,nres)
         if type eq 'counterstream' then begin
           Ez[i,j] = evals.ez_cycl_counterstream
           Etots[i,j] = evals.e_cycl_counterstream
@@ -207,6 +225,32 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   endif
 
 
+  if scheme eq 3 then begin
+    for i=0L,n_elements(freq)-1 do begin
+      for j=0L,n_elements(theta_kb)-1 do begin
+
+        kvec = sqrt(4.*!pi^2*fpe^2*freq[i]/(c^2*(fce*cos(theta_kb[j]*!dtor)-freq[i])))
+        evals = cycl_energies(freq[i],theta_kb[j],pa,fce,kvec,dens,nres)
+        if type eq 'counterstream' then begin
+          Ez[i,j] = evals.ez_cycl_counterstream
+          Etots[i,j] = evals.e_cycl_counterstream
+        endif
+        if type eq 'costream' then begin
+          Ez[i,j] = evals.ez_cycl_costream
+          Etots[i,j] = evals.e_cycl_costream
+        endif
+        if type eq 'landau' then begin
+          Ez[i,j] = evals.ez_landau
+          Etots[i,j] = evals.ez_landau
+        endif
+      endfor
+    endfor
+  endif
+
+
+
+
+
   ;---------------------------------------------------------
   ;plot a spectra of the cyclotron
   ;energies in parameter space
@@ -214,10 +258,10 @@ pro cycl_energies_parameter_space,pa,theta_k,$
 
 
   pastr = strtrim(string(pa,format='(F5.1)'),2)
-  theta_kstr = strtrim(string(theta_k,format='(F5.1)'),2)
+  theta_kstr = strtrim(string(theta_kb,format='(F5.1)'),2)
   if scheme eq 0 then freqstr = strtrim(string(freq/1000.,format='(F9.3)'),2)
-  if scheme eq 1 then densstr = strtrim(string(dens,format='(F7.1)'),2)
-  if scheme eq 2 then fcestr = strtrim(string(fce/1000.,format='(F7.1)'),2)
+  if scheme eq 1 or scheme eq 3 then densstr = strtrim(string(dens,format='(F7.1)'),2)
+  if scheme eq 2 or scheme eq 3 then fcestr = strtrim(string(fce/1000.,format='(F7.1)'),2)
 
 
 
@@ -233,6 +277,10 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   ' deg!CFor theta_kb='+theta_kstr+$
   ' deg!Cfor fce of '+fcestr+' kHz'+$
   '!Cfrom cycl_energies_parameter_space.pro'
+  if scheme eq 3 then titlestr = 'Etotal '+type+' energy (keV)!Cfor e- w/ PA='+pastr+$
+  ' deg!CFor dens='+densstr+$
+  ' cm-3!Cfor fce of '+fcestr+' kHz'+$
+  '!Cfrom cycl_energies_parameter_space.pro'
 
 
   titlestr2 = 'Ez '+type+' energy (keV)'
@@ -241,6 +289,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   if scheme eq 1 then typestr = 'fce_vs_freq--dens='+densstr+'cm3--PA='+pastr+'deg--TBK='+theta_kstr+'deg'
   if scheme eq 2 and ~KEYWORD_SET(f_fce) then typestr = 'dens_vs_freq--fce='+fcestr+'kHz--PA='+pastr+'deg--TBK='+theta_kstr+'deg'
   if scheme eq 2 and  KEYWORD_SET(f_fce) then typestr = 'dens_vs_fdivfce--fce='+fcestr+'kHz--PA='+pastr+'deg--TBK='+theta_kstr+'deg'
+  if scheme eq 3 then typestr = 'freq_vs_thetakb--fce='+fcestr+'kHz--PA='+pastr+'deg--DENS='+densstr+'cm-3'
 
 
 
@@ -249,8 +298,18 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   if keyword_set(ps) then !p.charsize = 1.
 
 
-  maxval_print = max(Etots)
-  maxzval_print = max(Ez)
+
+
+  ;Choose upper colorbar range (keV) (don't waste the colors plotting energies above this)
+  if ~keyword_set(maxval) then maxval = max(Etots,/nan)                ;keV
+  if ~keyword_set(minval) and KEYWORD_SET(zlog) then minval = min(Etots,/nan)                ;keV
+  if ~keyword_set(minval) and not KEYWORD_SET(zlog) then minval = min(Etots,/nan)                ;keV
+  if ~keyword_set(maxzval) then maxzval = max(Ez,/nan)                ;keV
+  if ~keyword_set(minzval) and KEYWORD_SET(zlog) then minzval = min(Ez,/nan)                ;keV
+  if ~keyword_set(minzval) and ~KEYWORD_SET(zlog) then minzval = min(Ez,/nan)                ;keV
+
+
+
 
   ;Make values above and below max/min values equal to the max/min values.
   goo = where(Etots gt maxval)
@@ -272,6 +331,25 @@ pro cycl_energies_parameter_space,pa,theta_k,$
   stepz = (maxzval-minzval)/nlevels
   levelsz = IndGen(nlevels) * stepz + minzval
 
+;  print,'Etots_max = ', max(maxval_print)
+;  print,'Ez_max = ', max(maxzval_print)
+
+;  goobar = levels - shift(levels,1)
+;  boobar = where(goobar[1:nlevels-1] lt 0.)
+;  if boobar[0] ne -1 then begin 
+;    print,'ENERGY RANGE CHOSEN (USING MAXVAL, MINVAL KEYWORDS) IS OUTSIDE OF THE CALCULATED ENERGY RANGE....RETURNING'
+;    print,'FYI: THE MAX AND MIN VALUES ARE: ' + string(minval_print) + '  to  ' + string(maxval_print) + '  keV'
+;    return
+;  endif
+;  goobar = levelsz - shift(levelsz,1)
+;  boobar = where(goobar[1:nlevels-1] lt 0.)
+;  if boobar[0] ne -1 then begin 
+;    print,'ENERGY RANGE CHOSEN (USING MAXZVAL, MINZVAL KEYWORDS) IS OUTSIDE OF THE CALCULATED ENERGY RANGE....RETURNING'
+;    return
+;  endif
+
+
+
   SetDecomposedState, 0, CurrentState=currentState
 
 
@@ -281,7 +359,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Etots,dens,fce/1000.,$
     xtitle='dens (cm-3)',ytitle='fce (kHz)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Colors=IndGen(nlevels)+1,$
     levels=levels,$
     title=titlestr,$
@@ -293,7 +371,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Ez,dens,fce/1000.,$
     xtitle='dens (cm-3)',ytitle='fce (kHz)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Colors=IndGen(nlevels)+1,$
     levels=levelsz,$
     title=titlestr2,$
@@ -313,7 +391,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Etots,tmpy,fce/1000.,$
     xtitle=xtitle,ytitle='fce (kHz)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Color=IndGen(nlevels)+1,$
     levels=levels,$
     title=titlestr,$
@@ -324,7 +402,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Ez,tmpy,fce/1000.,$
     xtitle=xtitle,ytitle='fce (kHz)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Colors=IndGen(nlevels)+1,$
     levels=levelsz,$
     title=titlestr2,$
@@ -342,7 +420,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Etots,tmpy,dens,$
     xtitle=xtitle,ytitle='dens (cm-3)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Colors=IndGen(nlevels)+1,$
     levels=levels,$
     title=titlestr,$
@@ -353,7 +431,7 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     SetDecomposedState, currentState
     contour,Ez,tmpy,dens,$
     xtitle=xtitle,ytitle='dens (cm-3)',$
-    /fill,$
+    /cell_fill,$   ;whitespace for NaN values
     C_Colors=IndGen(nlevels)+1,$
     levels=levelsz,$
     title=titlestr2,$
@@ -361,6 +439,36 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     xrange=xr_tmp,yrange=[min(dens),max(dens)],$
     xstyle=1,ystyle=1
   endif
+
+  if scheme eq 3 then begin
+
+    if ~KEYWORD_SET(f_fce) then xtitle = 'freq (kHz)' else xtitle = 'f/fce'
+    if ~KEYWORD_SET(f_fce) then tmpy=freq/1000. else tmpy=freq/fce
+    if ~KEYWORD_SET(f_fce) then xr_tmp=[min(freq/1000.),max(freq/1000.)] else $
+      xr_tmp=[min(freq/fce),max(freq/fce)]
+    SetDecomposedState, currentState
+    contour,Etots,tmpy,theta_kb,$
+    xtitle=xtitle,ytitle='thetakb (deg)',$
+    /cell_fill,$   ;whitespace for NaN values
+    C_Color=IndGen(nlevels)+1,$
+    levels=levels,$
+    title=titlestr,$
+    ymargin=[4,8],xmargin=[10,20],$
+    xrange=xr_tmp,yrange=[min(theta_kb),max(theta_kb)/1.2],$
+    xstyle=1,ystyle=1
+
+    SetDecomposedState, currentState
+    contour,Ez,tmpy,theta_kb,$
+    xtitle=xtitle,ytitle='thetakb (deg)',$
+    /cell_fill,$   ;whitespace for NaN values
+    C_Colors=IndGen(nlevels)+1,$
+    levels=levelsz,$
+    title=titlestr2,$
+    ymargin=[4,8],xmargin=[10,20],$
+    xrange=xr_tmp,yrange=[min(theta_kb),max(theta_kb)],$
+    xstyle=1,ystyle=1
+  endif
+
 
 
   SetDecomposedState, currentState
@@ -380,10 +488,6 @@ pro cycl_energies_parameter_space,pa,theta_k,$
     Charsize=0.75;,_extra={yminor:9,ytickformat:'(f9.3)'}
 
 
-
-  print,etots
-  print,'Etots_max = ', max(maxval_print)
-  print,'Ez_max = ', max(maxzval_print)
   if keyword_set(ps) then pclose
 
 end
