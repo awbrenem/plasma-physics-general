@@ -454,7 +454,7 @@ pro cycl_energies_parameter_space,pa,theta_kb,$
     levels=levels,$
     title=titlestr,$
     ymargin=[4,8],xmargin=[10,20],$
-    xrange=xr_tmp,yrange=[min(theta_kb),max(theta_kb)/1.2],$
+    xrange=xr_tmp,yrange=[min(theta_kb),max(theta_kb)],$
     xstyle=1,ystyle=1
 
     SetDecomposedState, currentState

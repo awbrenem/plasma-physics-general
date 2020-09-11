@@ -701,8 +701,8 @@ print,'Final e- pitch angle is ',aeqf
 ;Basic equations:
 
 
-ilat = acos(sqrt(1/L))/!dtor  ;invariant latitude
 Lshell = rad/(cos(!dtor*mlat)^2)  ;L-shell in centered dipole
+ilat = acos(sqrt(1/Lshell))/!dtor  ;invariant latitude
 x_sm = rad*cos(mlat*!dtor)
 z_sm = rad*sin(mlat*!dtor)
 

@@ -22,6 +22,60 @@ cycl_energies_parameter_space,pa,scheme=3,ps=ps,$
 
 
 
+
+;--------------------------------------------------
+;For Cindy's PSP whistlers
+;--------------------------------------------------
+
+
+ps = 0      ;save to postscript?
+
+pa=15.        ;e- pitch angle
+theta_k=60.   ;wave normal angle
+density_range = [200,500]   ;cm-3
+fce_range = [1000,2000]  ;Hz
+freq_range = [50,300]    ;Hz
+minval = 0.00    ;minimum energy plotted (keV)
+maxval = 10.   ;maximum energy plotted (keV)
+minzval = 0.0    ;minimum energy plotted (keV) (FA energy plot)
+maxzval = 10.   ;maximum energy plotted (keV)
+
+ndens = 20  &  nfce = 20  &  nfreq = 20  ;number of contours
+
+;                scheme 0:  fce vs density (at constant wave freq)
+;                scheme 1:  fce vs freq (at constant density)
+;                scheme 2:  density vs freq (at constant fce)
+;                scheme 3:  freq vs theta_kb (at constant fce, dens)
+
+
+cycl_energies_parameter_space,pa,theta_k,scheme=0,ps=ps,$
+  density_range=density_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='costream',$
+  minval=0,maxval=30,minzval=0,maxzval=30
+
+cycl_energies_parameter_space,pa,theta_k,scheme=1,ps=ps,$
+  freq_range=freq_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='costream',$
+  minval=1.,maxval=2000.,minzval=minzval,maxzval=2000.
+
+cycl_energies_parameter_space,pa,theta_k,scheme=2,ps=ps,$
+  fcev=1500.,density_range=density_range,freq_range=freq_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='costream',$
+  minval=0.,maxval=1.,minzval=0.,maxzval=1.
+
+;scheme 3:  freq vs theta_kb (at constant fce, dens)
+;Can you run the angle one for n=250/cc and fce of 1100? and n=325 and fce=2000?
+cycl_energies_parameter_space,pa,scheme=3,ps=ps,$
+  fcev=2000.,densv=325.,freq_range=freq_range,$
+  ndens=ndens,nfce=nfce,nfreq=nfreq,harmonic=1.,type='costream',$
+  minval=0.,maxval=2.5,minzval=0.,maxzval=2.5
+
+
+
+
+
+
+
 ;--------------------------------------------------
 ;Aaron BARREL Paper 3 calculation for waves near flh
 ;--------------------------------------------------
