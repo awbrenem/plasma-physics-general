@@ -2,6 +2,9 @@
 ;*****************************************************************************************
 ;
 ;  FUNCTION : cold_plasma_dispersion.pro
+;
+;****NOTE: Calculated Stix parameters nearly identical to Lynn Wilson's cold_plasma_params.pro 
+;	
 ;  PURPOSE  : Input wave freq, Emax/Eint ratio, dens, Bo.
 ;			  Returns a structure with the following:
 ;				 --Useful cold plasma parameters from full cold plasma dispersion
@@ -11,7 +14,7 @@
 ;				   polarization, etc...)
 ;				 --Resonance energies (cyclotron, landau) for range of
 ;				   pitch angles
-;				 --Wave mode from CMA diagram (IN PROGRESS....)
+;				 --Wave mode from CMA diagram (NOT FINISHED....)
 ;
 ;  CALLED BY: N/A
 ;
@@ -385,21 +388,38 @@ function cold_plasma_dispersion,epol=epol,$
 
 
 	;------------------------------------------------------------------------------
-	;Find Bw from Ew (Agapitov 2013 "Statistics of whistler mode waves...")
+	;Find cB/E for cold plasma waves
+	;To convert to B in nT use 
+	;BnT = 1d9*(cB/E)*EmV/m/3d8
 	;------------------------------------------------------------------------------
 
-	;Eqn 3 Agapitov 2013
+	;Oblique waves Eqn 2 and 3 Agapitov 2013 ("Statistics of whistler mode waves...")
 	num = sin(theta)*(n^2 - P)
 	den1 = (n^2*sin(theta)^2 - P)^2
 	den2 = (D^2*(n^2*sin(theta)^2 - P)^2) / ((n^2 - S^2)^2)
 	den3 = n^4 * sin(theta)^2 * cos(theta)^2
-
 	cosbeta = num/sqrt(den1 + den2 + den3)
-	beta = acos(cosbeta)  ;angle b/t Ew and k
+	betatmp = acos(cosbeta)  ;angle (radians) b/t Ew and k
+	cBw_to_Ew_agapitov = n*sin(betatmp)
 
-	;Eqn 2 (c*Bw/Ew, where Bw and Ew are spectral power)
-	cBw_to_Ew = sqrt(sin(beta)^2*n^2)
 
+	;From Hartley16 Eqn1 (parallel whistler mode only)
+	;(Bw in Tesla and E in V/m)
+	t1 = (fpe^2)/(freq*(freq-fce))
+	cBw_to_Ew_hartley = sqrt(1. - t1)
+
+
+	;Oblique waves from Hartley16 Eqn2 (doi:10.1002/2016JA022501)
+	;(Bw in Tesla and E in V/m)
+	t1 = (D/(S-n^2))^2
+	t2 = (P - n^2*sin(theta)^2)^2
+	t3 = P^2*cos(theta)^2
+	t4 = t2 
+	t5 = t1 + 1.
+	t6 = (n^2*cos(theta)*sin(theta))^2
+	num = t1*t2 + t3 
+	den = t4*t5 + t6
+	cBw_to_Ew_hartley2 = n*sqrt(num/den) 
 
 	;------------------------------------------------------------------------------
 
@@ -433,7 +453,10 @@ function cold_plasma_dispersion,epol=epol,$
 	mepp:mepp,$
 	Ex2Ey:epol,$
 	Ez2Ex:Ez2Ex,$
-	cB2E:cBw_to_Ew,$
+	cB2E_obliquepropagation_v1:cBw_to_Ew_agapitov,$
+	cB2E_obliquepropagation_v2:cBw_to_Ew_hartley2,$
+	cB2E_parallelpropagation:cBw_to_Ew_hartley,$
+	betaangle_E_k:betatmp,$
 	cp_params:cp_params,$
 	notes:notes}
 
