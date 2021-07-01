@@ -117,6 +117,9 @@ Hplus2e_mass = mp/me       ;H+ to electron mass ratio
 ;Vsc ~ 10 km/s,   B = 3d4 nT
 ;E = 10.*3d4/1000. = 300 mV/m
 
+;Rule of thumb in ionosphere: 500 mV/m = 10 km/s
+500/10 = x/(20/1000.)
+
 Ew = 0.5  ;mV/m
 Bw = 150/1000. ;nT
 Vph = Ew*1000/Bw  ;km/s
@@ -216,14 +219,43 @@ print,'beta_t = ' + strtrim(beta_t)
 
 ;---------------------------------------------
 ;MLT-UT conversion factor
+
+;Rough conversion is: MLT = UT + geolong_hrs
+;where geolong_hrs is Geographic longitude in hrs
+
+;E.g. Bozeman MT is at -111 deg W longitude. 
+;This is x = (24./360)*(-111) = -7.4 hours 
+;MLT = UT - 7.4 
+
+
+;Laundal and Richmond, Magnetic Coordinate Systems, 2016 (***NEED TO CHECK CALCULATION***)
+;Test values from THEMIS ASI (Table 2): http://www.igpp.ucla.edu/public/vassilis/thm_SSR/Mende_S_etal_SSR_GBO_Instr_paper.pdf
+
 ;---------------------------------------------
 
-MLT = UT - 7 hrs
+;Constants for N and S footpoints (geographic locations of North and South center dipole poles)
+phi_N = -72.63  ;degrees E (see )
+phi_S = 107.37
+
+;Define magnetic longitude (+ to E and - to W)
+phi = -81.  ;deg
+MLT = 0.
+UT = MLT - (phi + phi_N)/15.   ;hrs
+
+UT = 0.
+MLT = UT + (phi + phi_N)/15.
+
+
+
+
+
+
+
 
 
 
 ;-------------------------------------------------------------
-;E/B and cB/E ratios
+;E/B and cB/E ratios (inverse refractive index)
 ;-------------------------------------------------------------
 
 ;E in V/m, B in Tesla
@@ -554,8 +586,8 @@ print,'Final e- pitch angle is ',aeqf
 
 	;-------------------
 	;ExB drift    (km/s)
-	Emag = 5.    ;(mV/m)
-	Bmag = 150.    ;(nT)
+	Emag = 100.    ;(mV/m)
+	Bmag = 30000.    ;(nT)
 	angle = 90.
 
 	Ve = sin(angle*!dtor)*1000*Emag/Bmag
@@ -899,6 +931,13 @@ alpha = asin(sqrt(Bo/Bmax))/!dtor
 Bmax = 100.
 Bo = Bmax/100. + 1.
 alpha = asin(sqrt(Bo/Bmax))/!dtor
+
+;100 km alpha = 78.
+;450 km alpha = 77.5 
+;500 km alpha = 63.
+;550 km alpha = 62.
+;600 km alpha = 60.6
+;650 km alpha = 60.
 
 
 bdip = dipole(5.5)
