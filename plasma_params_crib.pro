@@ -3,6 +3,7 @@
 
 ;--------------------------
 ;PLASMA PARAMETERS
+;Mapping of flux down field line
 ;MLT-UT conversion
 ;Change in L due to an azimuthal electric field impulse leading to radially inward ExB drift.
 ;SHOCK QUANTITIES
@@ -245,6 +246,34 @@ UT = MLT - (phi + phi_N)/15.   ;hrs
 UT = 0.
 MLT = UT + (phi + phi_N)/15.
 
+
+
+;-------------------------------------------------------------
+;Notes on mapping quantities along magnetic field lines
+;1) mapping differential number flux down field lines (invariant)
+;2) mapping E-fields
+;3) mapping B-fields
+;-------------------------------------------------------------
+
+;-----(1)-----
+;Paschmann, G., Stein Haaland and Rudolf Treumann (Eds.) (2002), Auroral Plasma Physics, Space Sciences Reviews 103: Kluwer.
+;Eqns 3.33-3.35
+;https://link.springer.com/content/pdf/10.1007%2F978-94-007-1086-3.pdf
+
+;Assuming no Eparallel, the differential number flux is invariant along a field line. This is because 
+;1) the enhanced flux due to the smaller cross-sectional area (Jpar_i/jpar_m = Bi/Beq) is exactly balanced by the
+;2) decreased number of electrons in the loss cone due to first adiabatic invariant conservation. In other words, 
+;the fraction of particles in the loss cone decreases by the magnetic field ratio (alpha^2 ~ Beq/Bi)
+
+;-----(2)-----
+;E-field mapping (no Epar) given by 
+Eperp_eq = Eperp_ion*sqrt(Beq/Bion)
+
+;-----(3)-----
+;B-field mapping (no Epar) given by 
+Bperp_eq = Bperp_ion*sqrt(Beq/Bion)
+
+;Note that the E/B ratios are invariant along a field line
 
 
 
