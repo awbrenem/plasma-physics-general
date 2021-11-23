@@ -265,6 +265,8 @@ MLT = UT + (phi + phi_N)/15.
 ;2) decreased number of electrons in the loss cone due to first adiabatic invariant conservation. In other words, 
 ;the fraction of particles in the loss cone decreases by the magnetic field ratio (alpha^2 ~ Beq/Bi)
 
+;The spectral intensity (integrated over solid angles) has to depend on Beq/Bi b/c the energy is being focused.
+
 ;-----(2)-----
 ;E-field mapping (no Epar) given by 
 Eperp_eq = Eperp_ion*sqrt(Beq/Bion)
