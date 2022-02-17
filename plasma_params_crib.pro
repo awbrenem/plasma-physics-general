@@ -49,9 +49,10 @@
 B = 2. ;nT
 n = 10. ;cm-3
 Z = 1    ;charge state (number of unmatched e-)
-muu = 1  ;mi/mp
-
-
+muu = 1  ;mi/mp   (atomic mass unit)
+;O+ muu=15
+;He+ muu=4
+;N+ muu =14
 ;Define polytropic index
 
 ;Isothermal process (gamma = 1)
@@ -109,7 +110,10 @@ Hplus2e_mass = mp/me       ;H+ to electron mass ratio
 
 
 ;---------------------------------------------------
-;PHASE VELOCITY AND RESONANCE ENERGY FROM EW AND BW
+;PHASE VELOCITY AND RESONANCE ENERGY FOR ALFVEN WAVES FROM EW AND BW
+;See Chaston 2021 (Frontiers); Stasiewicz+00; Goertz and Boswell+79 for Alfven wave impedance (dispersion) relation
+;Eperp/Bperp = Va * sqrt((1 + kperp^2*lambda_e^2)(1 + kperp^2*rho_i^2))
+;However, the sqrt() terms are only relevant for inertial Alfven waves
 ;---------------------------------------------------
 
 ;Transform from E, B to velocity
@@ -152,11 +156,37 @@ fce = 28.*B                                          ;electron cyclotron freq (H
 fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
 debye = 7.43e2*sqrt(Te)/sqrt(n)/100./1000.           ;Debye length (km) (for e- and ions)
 flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
-flhr2 = sqrt(abs(fce)*fci)							 						 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
-;;flhr3 = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
-fuh = sqrt(fpe^2 + fce^2)							 							 ;Upper hybrid res freq (Hz)
-fz = fce/2. + sqrt((fce/2.)^2 + fpe^2)							 ;z-mode lower freq (fz < f < fuh)
-fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;x-mode frequency (Hz)
+flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
+Meff = 1/((me/ne)*sum(n_alpha/m_alpha))				 ;Effective mass for use in fLHR calculation [Shkylar+94; Vavilov+13]
+flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
+ 												 ;"sum" means the sum over all ion species
+;---------
+;Test of flh3 from Kintner et al 1992 (Localized lower hybrid acceleration and ionospheric plasma)
+;They find flh = 4500 Hz
+nel = 4d3 ;cm-3 
+fpe = 5.7d5 ;Hz 
+fce = 1.0d6 ;Hz 
+nOplus = 4d3 ;cm-3 
+nHplus = 3d2 ;cm-3 
+
+me     = 9.1093897d-31     ; -Electron mass (kg)
+mp     = 1.6726231d-27
+mHplus = mp 
+mOplus = mp*15.
+
+Meff = 1/((me/nel)* ((nHplus/mHplus) + (nOplus/mOplus)))
+flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
+flhr3 = 4349 ;Hz  Checks out! 
+;---------
+
+
+
+;;flhr = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
+fr = sqrt(flhr^2*((index_ref^2)/(index_ref^2 + (fpe^2/freq^2)))) ;(Shklyar+94; Vavilov+13) Frequency at which whistler mode wave of freq ("freq") will reflect due to inability to propagate below lower hybrid freq
+fuh = sqrt(fpe^2 + fce^2)							 ;Upper hybrid res freq (Hz)
+fz = fce/2. + sqrt((fce/2.)^2 + fpe^2)				 ;Z-mode cutoff freq (Hz) (fz < f < fuh)
+fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;X-mode frequency (Hz)
+fl = sqrt(fpe^2 + (fce^2)/4.) - fce/2.				 ;L-mode cutoff freq (Hz) [e.g. Broughton16]
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
 pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
 VA = 2.18e11*B*BnT2BG/sqrt(n)/100./1000.             ;H+ Alfven vel (km/s)
@@ -215,6 +245,22 @@ print,'Cs_i = ' + strtrim(Cs_i,2) + ' km/sec'
 print,'beta_e = ' + strtrim(beta_e)
 print,'beta_p = ' + strtrim(beta_p)
 print,'beta_t = ' + strtrim(beta_t)
+
+
+
+;Geographic coordinates - transform from x,y,z, to geo lat, long 
+
+  outname = sc+'_out_iono_foot_north'
+  cotrans,outname+'_gsm',outname+'_gse',/GSM2GSE
+  cotrans,outname+'_gse',outname+'_gei',/GSE2GEI
+  cotrans,outname+'_gei',outname+'_geo',/GEI2GEO
+
+  get_data,outname+'_geo',data=data
+  glat=atan(data.y(*,2)/sqrt(data.y(*,0)^2+data.y(*,1)^2))*180/!pi
+  glon=atan(data.y(*,1)/data.y(*,0))*180/!pi
+
+  if (n_elements(where(data.y(*,0) lt 0)) ge 2) then glon[where(data.y(*,0) lt 0)]=glon[where(data.y(*,0) lt 0)]+180
+  store_data,outname+'_glat_glon',data={x:data.x,y:[[glat],[glon]]},dlim={colors:[2,4],labels:['GLAT','GLON']}
 
 
 
