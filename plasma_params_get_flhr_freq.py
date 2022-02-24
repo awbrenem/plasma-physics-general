@@ -1,4 +1,18 @@
-#Calculate lower hybrid frequency under various assumptions. 
+"""
+Get lower hybrid frequency based on various calculations:
+
+    flhr_HighDensityLimitTest -> Test to see if high density limit is applicable (fpi^2 >> fce*fci) 
+
+    flhr_HighDensityLimit(fce, fci) -> lower hybrid frequency in high density limit for single ion species
+
+    flhr_IonMassFractions(ne, fce, nH_ne, nO_ne) -> Lower hybrid frequency (not in high density limit) for fractional percentages of H+ and O+
+
+    flhr_H(ne, fce, fcH) -> Lower hybrid frequency (not in high density limit) for full H+
+    flhr_O(ne, fce, fcO) -> Lower hybrid frequency (not in high density limit) for full O+
+
+All frequencies in Hz, densities in cm-3
+"""
+
 
 import numpy as np
 
