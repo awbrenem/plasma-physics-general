@@ -152,11 +152,16 @@ Farad (F) = A s V-1 = s4 A2 kg-1 m-2
 
 fpe = 8980.*sqrt(n)                                  ;electron plasma freq (Hz)
 fpi = fpe*Z/(sqrt(muu)*43.)                          ;Ion plasma freq (Hz)
+fpi2 = 2.10d2 * Z * sqrt(ni/muu)
 fce = 28.*B                                          ;electron cyclotron freq (Hz)
-fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
+fci = fce*Z/(Hplus2e_mass*muu)                       ;ion cyclotron freq (Hz)
 debye = 7.43e2*sqrt(Te)/sqrt(n)/100./1000.           ;Debye length (km) (for e- and ions)
+;Below are 3 versions of the lower hybrid frequency (SEE plasma_params_get_flhr_freq.py)
+;--version for electrons and single ion species (not high density limit)
 flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
+;--simplification in high density limit
 flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
+;--Use the next version when multiple ion species are present and high density limit not applicable
 Meff = 1/((me/ne)*sum(n_alpha/m_alpha))				 ;Effective mass for use in fLHR calculation [Shkylar+94; Vavilov+13]
 flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
  												 ;"sum" means the sum over all ion species
@@ -176,9 +181,19 @@ mOplus = mp*15.
 
 Meff = 1/((me/nel)* ((nHplus/mHplus) + (nOplus/mOplus)))
 flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
-flhr3 = 4349 ;Hz  Checks out! 
-;---------
+;flhr3 = 4349 Hz  Checks out! 
 
+Z=1.
+muu = 15. ;for O+
+fpi = fpe*Z/(sqrt(muu)*43.)                          ;Ion plasma freq (Hz)
+fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
+
+flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
+;flhr = 2976 Hz
+flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
+;flhr2 = 6025 Hz 
+
+;---------
 
 
 ;;flhr = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
