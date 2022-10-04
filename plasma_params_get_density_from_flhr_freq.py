@@ -32,9 +32,9 @@ def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
     rH = nH_ne 
     rO = nO_ne
 
-    num = (fce/8980)**2
-    den = ((fce**2 * me) * (rH/mH + rO/mO)) / flh**2  
-    ne = num/(den - 1)
+    num = [(i/8980)**2 for i in fce]
+    den = [((fce[i]**2 * me) * (rH[i]/mH + rO[i]/mO)) / flh[i]**2 for i in range(len(fce))]
+    ne = [num[i]/(den[i]-1) for i in range(len(fce))]
 
     return ne
 
@@ -45,9 +45,14 @@ Lower hybrid frequency (not in high density limit) for 100% H+
 def dens_H(flh, fce, fcH):
 
     #Version 1 based on reduced form of nO and nH full version
-    num = (fce/8980)**2
-    den = (me/mH) * (fce**2/flh**2)
-    ne = num/(den-1)
+
+    num = [(i/8980)**2 for i in fce]
+    den = [(me/mH) * (fce[i]**2/flh[i]**2) for i in range(len(fce))]
+    ne = [num[i]/(den[i]-1) for i in range(len(fce))]
+
+    #num = (fce/8980)**2
+    #den = (me/mH) * (fce**2/flh**2)
+    #ne = num/(den-1)
 
     ##Version 2 (**Checked - gives same answer as Version 1)
     #gama = np.sqrt(1)*43
@@ -63,15 +68,17 @@ Lower hybrid frequency (not in high density limit) for 100% O+
 """
 def dens_O(flh, fce, fcO):
 
-    num = (fce/8980)**2
-    den = (me/mO) * (fce**2/flh**2)
-    ne = num/(den-1)
+
+    num = [(i/8980)**2 for i in fce]
+    den = [(me/mO) * (fce[i]**2/flh[i]**2) for i in range(len(fce))]
+    ne = [num[i]/(den[i]-1) for i in range(len(fce))]
+
 
     #Version 2 (**Checked - gives same answer as Version 1)
-    gama = np.sqrt(15)*43
-    num = fce*fcO*(gama/8980)**2
-    den = fce*fcO/(flh**2)
-    ne = num/(den - 1)
+    #gama = np.sqrt(15)*43
+    #num = fce*fcO*(gama/8980)**2
+    #den = fce*fcO/(flh**2)
+    #ne = num/(den - 1)
 
 
     return ne 
@@ -80,11 +87,12 @@ def dens_O(flh, fce, fcO):
 
 if __name__ == '__main__': 
     print("Running as script")
-    flh = 1000.
-    fce = 1e6 
-    nH_ne = 0. 
-    nO_ne = 1.
+    flh = [1000.,1500.]
+    fce = [1e6,1.5e6] 
+    nH_ne = [0.0,0.0] 
+    nO_ne = [1.0,1.0]
     ne1 = dens_IonMassFractions(flh, fce, nH_ne, nO_ne)
+
 
     fcH = fce/(Hplus2e_mass*1)
     ne2 = dens_H(flh, fce, fcH)
@@ -92,5 +100,5 @@ if __name__ == '__main__':
 
     fcO = fce/(Hplus2e_mass*15)
     ne3 = dens_O(flh, fce, fcO)
-
+    print(ne3)
 
