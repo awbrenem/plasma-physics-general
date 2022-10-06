@@ -1,44 +1,52 @@
 """
 Get lower hybrid frequency based on various calculations (Currently only for H+, O+ and mixed H+,O+ plasmas):
 
+    def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne)
+        Lower hybrid frequency (not in high density limit) for fractional percentages of H+ and O+
+    def flhr_singleion(ni, Bo, species)
+        Lower Hybrid freq (not high density limit) for single ion species
     def flhr_HighDensityLimitTest
         Test to see if high density limit is applicable (fpi^2 >> fce*fci) 
     def flhr_HighDensityLimit(fce, fci)
         lower hybrid frequency in high density limit for single ion species
-    def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne)
-        Lower hybrid frequency (not in high density limit) for fractional percentages of H+ and O+
-    def flhr_H(ne, fce, fcH)
-        Lower hybrid frequency (not in high density limit) for full H+
-    def flhr_O(ne, fce, fcO)
-        Lower hybrid frequency (not in high density limit) for full O+
 
 All frequencies in Hz, densities in cm-3
 
 NOTE: all input quantities must be on same cadence!!!!
+***Tested against the code plasma_params_get_density_from flhr_freq.py
+and the inversion works perfectly (ne->flh vs flh->ne)
+
 """
 
 
 import numpy as np
+import plasmapy
+from astropy.constants import m_e, m_p
+from astropy import units as u  
 
-me     = 9.1093897e-31
-mp     = 1.6726231e-27
-mH = mp         #H+ mass
-mO = 15.*mp     #O+ mass
+
+Oplus = plasmapy.particles.Particle("O 1+")
+Hplus = plasmapy.particles.Particle("H 1+")
+elec = plasmapy.particles.Particle("electron")
+
+me = elec.mass
+mH = Hplus.mass
+mO = Oplus.mass
+
+
 
 """
 Test to see if high density limit is applicable (fpi^2 >> fce*fci) 
 """
-def flhr_HighDensityLimitTest(ne, fce, fcH):
-
-    fpe = [8980.*np.sqrt(ne[i]) for i in range(len(fce))]
-    fpH = [fpe[i]/(np.sqrt(1.)*43.) for i in range(len(fce))]
-    #fpe = 8980*np.sqrt(ne) #Hz
-    #fpH = fpe/(np.sqrt(1.)*43.)
+def flhr_HighDensityLimitTest(ne, Bo):
 
     #...use H+ to calculate ratio (same value for every ion species)
-    fpH_fcefcH = [fpH[i]**2/(fce[i]*fcH[i]) for i in range(len(fce))]
+    fpi = [plasmapy.formulary.plasma_frequency(i, particle='H+', to_hz=True) for i in ne]
+    fci = [plasmapy.formulary.gyrofrequency(Bo, particle='H+', to_hz=True) for i in range(len(ne))]
+    fpi_fcefci = [fpi[i]**2/(fce[i]*fci[i]) for i in range(len(fce))]
 
-    return {"fpi_fcefci":fpH_fcefcH, "info":"High density limit only if fpi^2 >> fce*fci. Same value for every ion species"}
+    return {"fpi_fcefci":fpi_fcefci, "info":"High density limit only if fpi^2 >> fce*fci. Same value for every ion species"}
+
 
 """
 lower hybrid frequency in high density limit for single ion species
@@ -53,7 +61,7 @@ Lower hybrid frequency (not in high density limit) for fractional percentages of
 """
 def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
 
-    fpe = [8980.*np.sqrt(ne[i]) for i in range(len(ne))]
+    fpe = [plasmapy.formulary.plasma_frequency(i, particle='electron', to_hz=True) for i in ne]
 
     nH = [nH_ne[i]*ne[i] for i in range(len(ne))] #cm-3 
     nO = [nO_ne[i]*ne[i] for i in range(len(ne))] #cm-3 
@@ -62,27 +70,35 @@ def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
     return [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
 
 
-"""
-Lower hybrid frequency (not in high density limit) for full H+
-"""
-def flhr_H(ne, fce, fcH):
-
-    fpe = [8980.*np.sqrt(ne[i]) for i in range(len(ne))] #Hz
-    fpH = [fpe[i]/(np.sqrt(1.)*43.) for i in range(len(ne))]
-    return [np.sqrt(fpH[i]**2*fce[i]*fcH[i])/np.sqrt(fce[i]*fcH[i]+fpH[i]**2) for i in range(len(fce))]
-
 
 """
-Lower hybrid frequency (not in high density limit) for full O+
+Lower Hybrid freq (not high density limit) for single ion species
 """
-def flhr_O(ne, fce, fcO):
-    fpe = [8980*np.sqrt(ne[i]) for i in range(len(ne))] #Hz
-    fpO = [fpe[i]/(np.sqrt(15.)*43.) for i in range(len(ne))]
-    return [np.sqrt(fpO[i]**2*fce[i]*fcO[i])/np.sqrt(fce[i]*fcO[i]+fpO[i]**2) for i in range(len(fce))]
+
+def flhr_singleion(ni, Bo, species):
+    return [plasmapy.formulary.lower_hybrid_frequency(Bo, ni[i], ion=species,to_hz = True) for i in range(len(ni))]
 
 
 
-
+ 
 if __name__ == '__main__': 
     print("Running as script")
+
+    ne = [371. * u.cm**-3]
+    Bo = [43000. * u.nT]
+    fce = [plasmapy.formulary.gyrofrequency(Bo, 'e-', to_hz=True)]
+    fcH = [plasmapy.formulary.gyrofrequency(Bo, 'H+', to_hz=True)]
+    fcO = [plasmapy.formulary.gyrofrequency(Bo, 'O+', to_hz=True)]
+
+    flhr = flhr_IonMassFractions(ne, fce, [1.0], [0.0])
+    flhrH = flhr_singleion(ne, Bo, 'H+')
+    flhrO = flhr_singleion(ne, Bo, 'O+')
+
+    print(flhr, flhrH, flhrO)
+
+    #Test high density limit 
+    flhrHD_tst = flhr_HighDensityLimitTest(ne, Bo)
+    flhrHD = flhr_HighDensityLimit(fce, fcH)
+    print(flhrHD_tst, flhrHD)
+
 
