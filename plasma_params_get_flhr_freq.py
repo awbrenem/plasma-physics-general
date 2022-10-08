@@ -21,7 +21,7 @@ and the inversion works perfectly (ne->flh vs flh->ne)
 
 import numpy as np
 import plasmapy
-from astropy.constants import m_e, m_p
+#from astropy.constants import e
 from astropy import units as u  
 
 
@@ -63,10 +63,11 @@ def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
 
     fpe = [plasmapy.formulary.plasma_frequency(i, particle='electron', to_hz=True) for i in ne]
 
-    nH = [nH_ne[i]*ne[i] for i in range(len(ne))] #cm-3 
-    nO = [nO_ne[i]*ne[i] for i in range(len(ne))] #cm-3 
+    nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
+    nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
     
     Meff = [1./((me/ne[i])* ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
+
     return [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
 
 
@@ -84,21 +85,21 @@ def flhr_singleion(ni, Bo, species):
 if __name__ == '__main__': 
     print("Running as script")
 
-    ne = [371. * u.cm**-3]
-    Bo = [43000. * u.nT]
+    ne = [11111400. * u.cm**-3]
+    Bo = [45500. * u.nT]
     fce = [plasmapy.formulary.gyrofrequency(Bo, 'e-', to_hz=True)]
     fcH = [plasmapy.formulary.gyrofrequency(Bo, 'H+', to_hz=True)]
     fcO = [plasmapy.formulary.gyrofrequency(Bo, 'O+', to_hz=True)]
 
-    flhr = flhr_IonMassFractions(ne, fce, [1.0], [0.0])
+    flhr = flhr_IonMassFractions(ne, fce, [0.0], [1.0])
     flhrH = flhr_singleion(ne, Bo, 'H+')
     flhrO = flhr_singleion(ne, Bo, 'O+')
 
     print(flhr, flhrH, flhrO)
 
     #Test high density limit 
-    flhrHD_tst = flhr_HighDensityLimitTest(ne, Bo)
-    flhrHD = flhr_HighDensityLimit(fce, fcH)
-    print(flhrHD_tst, flhrHD)
+#    flhrHD_tst = flhr_HighDensityLimitTest(ne, Bo)
+#    flhrHD = flhr_HighDensityLimit(fce, fcH)
+#    print(flhrHD_tst, flhrHD)
 
 
