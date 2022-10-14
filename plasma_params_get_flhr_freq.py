@@ -68,7 +68,9 @@ def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
     
     Meff = [1./((me/ne[i])* ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
 
-    return [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
+    goo = [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
+    return goo
+    #return [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
 
 
 
@@ -77,7 +79,11 @@ Lower Hybrid freq (not high density limit) for single ion species
 """
 
 def flhr_singleion(ni, Bo, species):
-    return [plasmapy.formulary.lower_hybrid_frequency(Bo[i], ni[i], ion=species,to_hz = True) for i in range(len(ni))]
+
+    #Kludgy, but if I don't do take the "value" and then reassign the units 
+    #the below part doesn't work properly. 
+    goo = [plasmapy.formulary.lower_hybrid_frequency(Bo[i].value * u.nT, ni[i].value * u.cm**-3, ion=species,to_hz = True) for i in range(len(ni))]
+    return goo
 
 
 
@@ -85,15 +91,19 @@ def flhr_singleion(ni, Bo, species):
 if __name__ == '__main__': 
     print("Running as script")
 
-    ne = [11111400. * u.cm**-3]
-    Bo = [45500. * u.nT]
+    ne = [17632. * u.cm**-3, 18892. * u.cm**-3]
+    Bo = [51908. * u.nT, 47280 * u.nT]
+
+    flhrH = flhr_singleion(ne, Bo, 'H+')
+    flhrO = flhr_singleion(ne, Bo, 'O+')
+
+
+
     fce = [plasmapy.formulary.gyrofrequency(Bo, 'e-', to_hz=True)]
     fcH = [plasmapy.formulary.gyrofrequency(Bo, 'H+', to_hz=True)]
     fcO = [plasmapy.formulary.gyrofrequency(Bo, 'O+', to_hz=True)]
 
     flhr = flhr_IonMassFractions(ne, fce, [0.0], [1.0])
-    flhrH = flhr_singleion(ne, Bo, 'H+')
-    flhrO = flhr_singleion(ne, Bo, 'O+')
 
     print(flhr, flhrH, flhrO)
 
