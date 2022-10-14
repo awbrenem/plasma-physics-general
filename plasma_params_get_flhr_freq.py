@@ -42,7 +42,7 @@ def flhr_HighDensityLimitTest(ne, Bo):
 
     #...use H+ to calculate ratio (same value for every ion species)
     fpi = [plasmapy.formulary.plasma_frequency(i, particle='H+', to_hz=True) for i in ne]
-    fci = [plasmapy.formulary.gyrofrequency(Bo, particle='H+', to_hz=True) for i in range(len(ne))]
+    fci = [plasmapy.formulary.gyrofrequency(Bo[i], particle='H+', to_hz=True) for i in range(len(ne))]
     fpi_fcefci = [fpi[i]**2/(fce[i]*fci[i]) for i in range(len(fce))]
 
     return {"fpi_fcefci":fpi_fcefci, "info":"High density limit only if fpi^2 >> fce*fci. Same value for every ion species"}
@@ -77,7 +77,7 @@ Lower Hybrid freq (not high density limit) for single ion species
 """
 
 def flhr_singleion(ni, Bo, species):
-    return [plasmapy.formulary.lower_hybrid_frequency(Bo, ni[i], ion=species,to_hz = True) for i in range(len(ni))]
+    return [plasmapy.formulary.lower_hybrid_frequency(Bo[i], ni[i], ion=species,to_hz = True) for i in range(len(ni))]
 
 
 
