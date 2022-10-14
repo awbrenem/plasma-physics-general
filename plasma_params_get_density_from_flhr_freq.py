@@ -99,7 +99,9 @@ def dens_singleion(flh, Bo, species):
     return ne
 
 
-
+"""
+Run as script
+"""
 if __name__ == '__main__': 
     print("Running as script")
     flh = [7600.] * u.Hz
