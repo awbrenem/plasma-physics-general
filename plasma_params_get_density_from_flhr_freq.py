@@ -64,8 +64,7 @@ def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
         ne2 = ne[i].value
         ne[i] = ne2 * u.cm**-3
         if ne[i] < 0: 
-            ne = np.nan
-
+            ne[i] = np.nan
     
     return ne
 
@@ -93,8 +92,7 @@ def dens_singleion(flh, Bo, species):
         ne2 = ne[i].value
         ne[i] = ne2 * u.cm**-3
         if ne[i] < 0: 
-            ne = np.nan
-
+            ne[i] = np.nan
 
     return ne
 
