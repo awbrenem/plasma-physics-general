@@ -68,6 +68,9 @@ gamae = 1.
 
 Te = 7000 ;eV
 Ti = 1. ;eV
+Te_k = Te*11604.  ;temp in Kelvin
+Ti_k = Ti*11604.
+
 f=99. ;Hz  wave freq in sc frame
 Vsw = 400  ;solar wind vel (km/sec)
 theta_k = 0.  ;degrees
@@ -110,26 +113,19 @@ Hplus2e_mass = mp/me       ;H+ to electron mass ratio
 
 
 ;---------------------------------------------------
-;PHASE VELOCITY AND RESONANCE ENERGY FOR ALFVEN WAVES FROM EW AND BW
+;GROUP VELOCITY AND RESONANCE ENERGY FOR ALFVEN WAVES FROM EW AND BW
 ;See Chaston 2021 (Frontiers); Stasiewicz+00; Goertz and Boswell+79 for Alfven wave impedance (dispersion) relation
 ;Eperp/Bperp = Va * sqrt((1 + kperp^2*lambda_e^2)(1 + kperp^2*rho_i^2))
 ;However, the sqrt() terms are only relevant for inertial Alfven waves
 ;---------------------------------------------------
 
 ;Transform from E, B to velocity
-;E=VxB, where E(mV/m) = V(km/s) * B(nT)/1000
-;Test this. We see at RBSP perigee ~200-300 mV/m Vsc x B fields
-;Vsc ~ 10 km/s,   B = 3d4 nT
-;E = 10.*3d4/1000. = 300 mV/m
+;E=VxB, where E(V/m) = V(m/s) * B(T)
+;**Rule of thumb in ionosphere: 500 mV/m = 10 km/s
+Vsc = 10*1000. ; m/s
+Bo = 50000. ;nT
+E = Vsc * Bo = 0.5 V/m = 500 mV/m
 
-;Rule of thumb in ionosphere: 500 mV/m = 10 km/s
-500/10 = x/(20/1000.)
-
-Ew = 0.5  ;mV/m
-Bw = 150/1000. ;nT
-Vph = Ew*1000/Bw  ;km/s
-c_kms      = 2.99792458d5      ; -Speed of light in vacuum (m/s)
-E_keV = (0.511d6/sqrt(1-(vph^2/c_kms^2)) - 0.511d6)/1000.
 
 
 
@@ -165,37 +161,6 @@ flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limi
 Meff = 1/((me/ne)*sum(n_alpha/m_alpha))				 ;Effective mass for use in fLHR calculation [Shkylar+94; Vavilov+13]
 flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
  												 ;"sum" means the sum over all ion species
-;---------
-;Test of flh3 from Kintner et al 1992 (Localized lower hybrid acceleration and ionospheric plasma)
-;They find flh = 4500 Hz
-nel = 4d3 ;cm-3 
-fpe = 5.7d5 ;Hz 
-fce = 1.0d6 ;Hz 
-nOplus = 4d3 ;cm-3 
-nHplus = 3d2 ;cm-3 
-
-me     = 9.1093897d-31     ; -Electron mass (kg)
-mp     = 1.6726231d-27
-mHplus = mp 
-mOplus = mp*15.
-
-Meff = 1/((me/nel)* ((nHplus/mHplus) + (nOplus/mOplus)))
-flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
-;flhr3 = 4349 Hz  Checks out! 
-
-Z=1.
-muu = 15. ;for O+
-fpi = fpe*Z/(sqrt(muu)*43.)                          ;Ion plasma freq (Hz)
-fci = fce*Z/(1836.*muu)                              ;ion cyclotron freq (Hz)
-
-flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
-;flhr = 2976 Hz
-flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
-;flhr2 = 6025 Hz 
-
-;---------
-
-
 ;;flhr = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
 fr = sqrt(flhr^2*((index_ref^2)/(index_ref^2 + (fpe^2/freq^2)))) ;(Shklyar+94; Vavilov+13) Frequency at which whistler mode wave of freq ("freq") will reflect due to inability to propagate below lower hybrid freq
 fuh = sqrt(fpe^2 + fce^2)							 ;Upper hybrid res freq (Hz)
@@ -204,22 +169,30 @@ fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;X-mode frequency (Hz)
 fl = sqrt(fpe^2 + (fce^2)/4.) - fce/2.				 ;L-mode cutoff freq (Hz) [e.g. Broughton16]
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
 pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
+
+;Note in VA calculations that B is the BACKGROUND (or total) magnetic field in nT
+;(SEE plasma_parmas_crib_determine_electrostatic_or_electromagnetic.py)
 VA = 2.18e11*B*BnT2BG/sqrt(n)/100./1000.             ;H+ Alfven vel (km/s)
 VAe = VA * sqrt(1836.)                               ;electron Alfven vel (km/sec)
 VA2 = fci/fpi*3e5                                    ;Alternate H+ Alfven vel (km/s)
+;
 e_inertial = 5.31/sqrt(n)                            ;e- inertial length (skin depth) (km) - VERIFIED
 e_inertial2 = Vae/2./!pi/fce					     ;alternate formulation (km)
 ion_inertial = 2.28e7*sqrt(muu)/(Z*sqrt(n))/100./1000. ;Ion inertial length (km)
 ion_inertial2 = Va/2./!pi/fci                        ;alternate formulation (km/s) (ONLY CORRECT FOR H+)
-Ve = 4.19e7*sqrt(Te)/100./1000.                      ;e- thermal vel (km/s)
-Vi = 9.79e5*sqrt(Ti/muu)/100./1000.                  ;Ion thermal vel (km/s)
-Cs_i = 9.79e5*sqrt(gamai*Z*Te/muu)/100./1000.        ;Ion sound vel (km/s)
-Cs_i2 = sqrt((Te+3*Ti)/mp_ev)
+
 
 ;Since 1 eV = 1.6d-19 Joules, the energy in Joules is e1eV*Energy_eV.
 ;from E = 1/2 m*v^2 (Joules) we then have
-vel_elec = sqrt(2*e1eV*elec_eV/me)/1000.    ;km/s
-vel_ion = sqrt(2*e1eV*elec_eV/mi)/1000.     ;km/s
+Ve = sqrt(2*e1eV*elec_eV/me)/1000.    ;e- thermal vel (km/s)
+Vi = sqrt(2*e1eV*elec_eV/mi)/1000.     ;ion thermal vel (km/s)
+;e.g. Heelis98 (Ion Drift meter paper) - Electrons/H+ions with temp of 1200 K (0.1 eV) have thermal speeds 
+;of 4.4 km/s and 190 km/s, roughly. 
+
+
+Cs_i = 9.79e5*sqrt(gamai*Z*Te/muu)/100./1000.        ;Ion sound vel (km/s)
+Cs_i2 = sqrt((Te+3*Ti)/mp_ev)
+
 
 mepp = (B*BnT2BG)^2/8./!pi/n * erg2joule /e1ev       ;characteristic magnetic energy per particle (eV) - which particles will cyclotron interact
 beta_p = 4.03e-11*n*Ti/((B*BnT2BG)^2)                ;Proton beta
@@ -283,9 +256,9 @@ print,'beta_t = ' + strtrim(beta_t)
 ;MLT-UT conversion factor
 
 ;Rough conversion is: MLT = UT + geolong_hrs
-;where geolong_hrs is Geographic longitude in hrs
+;where geolong_hrs is Geographic longitude (East) in hrs
 
-;E.g. Bozeman MT is at -111 deg W longitude. 
+;E.g. Bozeman, MT is at -111 deg longitude (West). 
 ;This is x = (24./360)*(-111) = -7.4 hours 
 ;MLT = UT - 7.4 
 
@@ -320,13 +293,21 @@ MLT = UT + (phi + phi_N)/15.
 ;Paschmann, G., Stein Haaland and Rudolf Treumann (Eds.) (2002), Auroral Plasma Physics, Space Sciences Reviews 103: Kluwer.
 ;Eqns 3.33-3.35
 ;https://link.springer.com/content/pdf/10.1007%2F978-94-007-1086-3.pdf
+;Thaller thesis pg 26, footnote 10. 
 
 ;Assuming no Eparallel, the differential number flux is invariant along a field line. This is because 
-;1) the enhanced flux due to the smaller cross-sectional area (Jpar_i/jpar_m = Bi/Beq) is exactly balanced by the
-;2) decreased number of electrons in the loss cone due to first adiabatic invariant conservation. In other words, 
-;the fraction of particles in the loss cone decreases by the magnetic field ratio (alpha^2 ~ Beq/Bi)
+;(1) the enhanced flux due to the smaller cross-sectional area (Jpar_i/jpar_m = Bi/Beq) is exactly balanced by the
+;(2) decreased number of electrons in the loss cone due to first adiabatic invariant conservation. In other words, 
+;the fraction of particles in the loss cone decreases by the magnetic field ratio (alpha^2 ~ Beq/Bi). This dependance 
+;comes about in the solid angle (SA). For small angles, 
+;sin(alpha)~alpha. Hence the solid angle (SA = 2pi(1-cos(alpha))) reduces to SA = pi*alpha^2 = Beq/Bi. Hence, the
+;counterbalancing effect of (2) to (1) comes from modification of the solid angle. 
 
-;The spectral intensity (integrated over solid angles) has to depend on Beq/Bi b/c the energy is being focused.
+
+;If we integrate over solid angle then we no longer have (2) to counterbalance (1) and the 
+;energy becomes focused (e.g. Nature paper - particles within 1 deg of loss cone, those guaranteed to be lost, must 
+;have their intensity increased as the field lines come together in the ionosphere. 
+
 
 ;-----(2)-----
 ;E-field mapping (no Epar) given by 
@@ -338,28 +319,6 @@ Bperp_eq = Bperp_ion*sqrt(Beq/Bion)
 
 ;Note that the E/B ratios are invariant along a field line
 
-
-
-
-
-
-
-
-
-;-------------------------------------------------------------
-;E/B and cB/E ratios (inverse refractive index)
-;-------------------------------------------------------------
-
-;E in V/m, B in Tesla
-;Tesla = kg/s^2/A
-;Volt = kg*m^2/s^3/A
-
-;So, V/m / Tesla = m/s
-
-;If we let E be in V/m and B in T, then
-c=3d8
-cB_E = c/1d9/E_B
-;(e.g. see comparison w/ Agapitov work)
 
 
 
@@ -386,9 +345,10 @@ cB_E = c/1d9/E_B
 	dB_dt = 9./1800.   ;(nT/sec)
 
 	me     = 9.1093897d-31     ; -Electron mass (kg)
+
 	e1eV = 1.6e-19              ;joules in 1 eV
 
-	elec_eV = 30.*1000.
+	elec_eV = 10.
 	;perp velocity of electron gyromotion
 	vel_elec = sqrt(2*e1eV*elec_eV/me)   ;m/s
 
@@ -823,7 +783,6 @@ print,'Final e- pitch angle is ',aeqf
 
 
 ;Basic equations:
-
 
 Lshell = rad/(cos(!dtor*mlat)^2)  ;L-shell in centered dipole
 ilat = acos(sqrt(1/Lshell))/!dtor  ;invariant latitude
