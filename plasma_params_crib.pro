@@ -187,7 +187,8 @@ ion_inertial2 = Va/2./!pi/fci                        ;alternate formulation (km/
 Ve = sqrt(2*e1eV*elec_eV/me)/1000.    ;e- thermal vel (km/s)
 Vi = sqrt(2*e1eV*elec_eV/mi)/1000.     ;ion thermal vel (km/s)
 ;e.g. Heelis98 (Ion Drift meter paper) - Electrons/H+ions with temp of 1200 K (0.1 eV) have thermal speeds 
-;of 4.4 km/s and 190 km/s, roughly. 
+;of 4.4 km/s and 190 km/s, roughly. Note that Ve >> e- kinetic velocity in ionosphere.
+;Also note that an ionospheric SC velocity of 7.8 km/s will impart 0.3 eV/amu to incident particles.
 
 
 Cs_i = 9.79e5*sqrt(gamai*Z*Te/muu)/100./1000.        ;Ion sound vel (km/s)
@@ -1148,10 +1149,14 @@ f = fce/2.2
 		;Note that for f<0.5fce the group velocity is faster than phase velocity.
 		Vg = 2*c*sqrt(f)*(fce*cos(theta_kb*!dtor)-f)^(3/2.)/(fpe*fce*cos(theta_kb*!dtor))
 
-		;parallel component of Ew (to Bo) - Omura09 eqn42
+		;parallel component of Ew (to Bo)
+		;1) - Omura09 eqn42
 		epsilon = sqrt(f*(fce - f)/fpe^2)
 		delta = 1/(1 + epsilon^2)             ;in terms of freq
 		Ew_par = f*sin(theta_kb*!dtor)*Ew/(delta^2 * fce - f) ;Ew is the component in transverse plane (Ex-stix)
+		;2) Columban+23 (eqn1) - for low freq (f<<fce), high density (fpe^2/fce^2 >> 1)
+		Ew(w,t) * Bo/abs(Bo) = abs(Ew) * (w^2/wce^2) * tan(theta_kb*!dtor)
+		;Ew(w,t) is Fourier transform
 
 
 		;Whistler electric field polarizations (Stix coord)
@@ -1335,7 +1340,26 @@ f = fce/2.2
 
 ;------------------
 ;Doppler shift plot
+
+;DS for PSP whistlers at:
+;Karbashewski, S., Agapitov, O. V., & Kim, H. (2023). Counter-Streaming Whistlers
+;Collocated with Magnetic Field Inhomogeneities and their Application to
+;Electric Field Measurement Calibration. (Manuscript submitted for publication)
+
+
+;	Polarization: Lorentz VECTOR transformations from SC (primed) to plama frame given by Feynman+64
+;	Ewpar_SW = Ewpar'
+;	Bwpar_SW = Bwpar'
+;	Ewperp_SW = (Ew' - vxBw')_perp * gama
+;	Bwperp_SW = (Bw' + (vxEw'/c^2))_perp * gama
+
+;	for v << c these reduce to 
+;	Ewperp = (Ew' - vxBw')_perp
+;	Bwperp = Bwperp'
 ;------------------
+
+
+
 
 	t0 = (2*!pi*f/(3e8))^2
 	t1 = fpe^2/(f*(f+fce))
