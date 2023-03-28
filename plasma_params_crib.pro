@@ -1346,6 +1346,8 @@ f = fce/2.2
 ;Collocated with Magnetic Field Inhomogeneities and their Application to
 ;Electric Field Measurement Calibration. (Manuscript submitted for publication)
 
+;A&A 656, A24 (2021) https://doi.org/10.1051/0004-6361/202140945 
+;M. Kretzschmar et al. 202
 
 ;	Polarization: Lorentz VECTOR transformations from SC (primed) to plama frame given by Feynman+64
 ;	Ewpar_SW = Ewpar'
