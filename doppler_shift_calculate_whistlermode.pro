@@ -3,18 +3,27 @@
 ;assumption of a dispersion relation
 ;
 ;For example, see the Appendix of 
-;Wilson III, L. B., et al. (2013), Electromagnetic waves and electron anisotropies 
-;downstream of supercritical interplanetary shocks, 
-;J. Geophys. Res. Space Physics, 118, 5–16, doi:10.1029/2012JA018167.
+    ;Wilson III, L. B., et al. (2013), Electromagnetic waves and electron anisotropies 
+    ;downstream of supercritical interplanetary shocks, 
+    ;J. Geophys. Res. Space Physics, 118, 5–16, doi:10.1029/2012JA018167.
 ;and
-;Agapitov et al, 2020: Sunward-propagating Whistler Waves Collocated 
-;with Localized Magnetic Field Holes in the Solar Wind: Parker Solar Probe Observations at 35.7 Re Radi
+    ;Agapitov et al, 2020: Sunward-propagating Whistler Waves Collocated 
+    ;with Localized Magnetic Field Holes in the Solar Wind: Parker Solar Probe Observations at 35.7 Re Radi
+;and
+    ;Kretzschmar+21; Whistler waves observed by Solar Orbiter/RPW between 0.5 AU and 1 AU
+;and 
+    ;Columban+23: submitted to JGR --> they develop a methodology for whistlers after Encounter 1 where the Bwu SCM channel breaks. 
 
-;To use, first calculate the wave normal vector using 3x Bw and min variance analysis.
+
+;To use, first calculate the wave normal vector using 3x Bw and min variance analysis 
+;(a method using only 2x Bw from PSP encounters after Encounter 1, where the Bw_u SCM channel malfunctions, are derived in Colomban+23)
 ;Then input:
 ;fsc --> observed (spacecraft frame) frequency (Hz)
 ;tkv --> angle b/t the wave normal vector and plasma flow velocity (deg)
 ;tkb --> angle b/t the wave normal vector and Bo (deg)
+    ;***NOTE: It is possible to use the SC frame tkv and tkb because the Vsw << c Lorentz transformations for Bw are
+    ;Bw_par = Bw_par'
+    ;Bw_perp = Bw_perp' 
 ;dens --> density in 1/cm-3
 ;Bo --> DC magnetic field in nT 
 ;Vsw --> solar wind velocity in km/s 
