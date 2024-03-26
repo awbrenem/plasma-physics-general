@@ -16,6 +16,11 @@
 ;				   pitch angles
 ;				 --Wave mode from CMA diagram (NOT FINISHED....)
 ;
+;  NOTE: identify wave mode (2 component plasma) by using Stix Figs. 2-2 and 2-1 along with the signs of the seven 
+;  quantities R,L,D,S,P,P/S,(RL-PS) 
+;
+;
+;
 ;  CALLED BY: N/A
 ;
 ;  CALLS:
@@ -162,6 +167,7 @@ function cold_plasma_dispersion,epol=epol,$
 	w_pHe = w_pe/sqrt(mr2/nr2)
 	w_pO = w_pe/sqrt(mr3/nr3)
 
+
 	fce = abs(w_ce/2./!pi)
 	fpe = w_pe/2./!pi
 
@@ -191,7 +197,7 @@ function cold_plasma_dispersion,epol=epol,$
 	L_H_tmp = (w_pH^2)/(w*(w-w_cH))
 	L_He_tmp = (w_pHe^2)/(w*(w-w_cHe))
 	L_O_tmp = (w_pO^2)/(w*(w-w_cO))
-	L = 1-(L_e_tmp + L_H_tmp + L_He_tmp + L_O_tmp)
+	L = 1 - (L_e_tmp + L_H_tmp + L_He_tmp + L_O_tmp)
 
 
 	; Now for P which is the along B part
@@ -202,8 +208,8 @@ function cold_plasma_dispersion,epol=epol,$
 	P = 1 - (P_e_tmp + P_H_tmp + P_He_tmp + P_O_tmp)
 
 
-	; we know have R,L, and P
-	;Now following Stix we define S and D
+	; we now have R,L, and P
+	;Now following Stix Eqn 19, pg 7 we define S and D
 	S=0.5*(R+L)
 	D=0.5*(R-L)
 
@@ -220,8 +226,6 @@ function cold_plasma_dispersion,epol=epol,$
 
 
 	;  if keyword_set(bpol) then begin
-
-
 	;	;testing
 	;	theta2 = acos(bpol/epol)/!dtor
 	;
@@ -235,12 +239,14 @@ function cold_plasma_dispersion,epol=epol,$
 
 
 
-	n2= epol*D+S                  ;eqn 42 Stix
+	n2 = epol*D+S                  ;eqn 42 Stix
 	n=sqrt(n2)
 	kvect=n*w/(3.0d5)             ;1/km
 	wavelength=2.*!pi/kvect       ;km
 
-	; Calculate angle for resonance cone Stix page 12 eq 1-45
+
+	;Calculate angle for resonance cone Stix page 12 eq 1-45
+	;Note that NaN values mean no resonance cone on dispersion surface
 	tantheta2=-P/S
 	tantheta=sqrt(tantheta2)
 	resangle= (360./6.2830)* atan(tantheta)
@@ -271,7 +277,7 @@ function cold_plasma_dispersion,epol=epol,$
 
 
 	;----------------------------------------------------------------------------
-	;Frequencies of cutoffs and resonances
+	;Frequencies of cutoffs and 1s
 	;----------------------------------------------------------------------------
 
 	;R=0 cutoff --> no ion term
@@ -279,27 +285,68 @@ function cold_plasma_dispersion,epol=epol,$
 	bcoeff = w_ce
 	ccoeff = -1*w_pe^2
 	w_ro_e = (-bcoeff + sqrt(bcoeff^2 - 4*acoeff*ccoeff))/(2*acoeff)
-	f_ro_e = w_ro_e/2./!pi
+	f_Rcutoff_electrons_only = w_ro_e/2./!pi
 	;L=0 cutoff --> no ion term, but otherwise no approximations
 	acoeff = 1.
 	bcoeff = -1*w_ce
 	ccoeff = -1*w_pe^2
 	w_lo_e = (-bcoeff + sqrt(bcoeff^2 - 4*acoeff*ccoeff))/(2*acoeff)
-	f_lo_e = w_lo_e/2./!pi
+	f_Lcutoff_electrons_only = w_lo_e/2./!pi
+  ;P=0 cutoff 
+  f_Pcutoff_electrons_only = w_pe/2./!pi
+  f_Pcutoff = sqrt(w_pe^2 + w_pH^2 + w_pHe^2 + w_pO^2)/(2*!pi)
 
-
-	;Gurnett's vesion....gives the same value as mine
+	;Gurnett's version....gives the same value as mine
 	;w_lo_e2 = -1*abs(w_ce)/2. +  sqrt((w_ce/2.)^2 + w_pe^2)
-	;f_lo_e2 = w_lo_e2/2./!pi
+	;f_Lcutoff2 = w_lo_e2/2./!pi
+
+
+  ;----------------------------------------------------
+  ;Solve for f_Rcutoff and f_Lcutoff including ion terms 
+  ;----------------------------------------------------
+  nfreqs = 1000
+
+  ;f_Rcutoff
+  ;Use the value of f_Lcutoff (e- term only) to narrow the range of frequencies to search for solution
+  deltav = 0.1*f_Rcutoff_electrons_only
+  maxfreq = 2*!pi * (f_Rcutoff_electrons_only + deltav)
+  minfreq = 2*!pi * (f_Rcutoff_electrons_only - deltav)
+  omegas = indgen(nfreqs)*maxfreq / (nfreqs-1) + minfreq ;2*!pi*f_Rcutoff/2
+
+  lhs = omegas
+  rhs = w_pe^2/(omegas+w_ce) + w_pH^2/(omegas+w_cH) + w_pHe^2/(omegas+w_cHe) + w_pO^2/(omegas+w_cO)
+  diff = rhs - lhs
+  goo = min(abs(diff),wh)
+  f_Rcutoff = omegas[wh]/(2.*!pi)
+
+  ;!p.multi = [0,0,2]
+  ;plot,omegas,lhs
+  ;oplot,omegas,rhs,color=240
+  ;plot,omegas,diff
+
+
+  ;f_Lcutoff
+  ;Use the value of f_Lcutoff (e- term only) to narrow the range of frequencies to search for solution
+  deltav = 0.1*f_Lcutoff_electrons_only
+  maxfreq = 2*!pi * (f_Lcutoff_electrons_only + deltav)
+  minfreq = 2*!pi * (f_Lcutoff_electrons_only - deltav)
+  omegas = indgen(nfreqs)*maxfreq / (nfreqs-1) + minfreq
+
+  lhs = omegas 
+  rhs = w_pe^2/(omegas-w_ce) + w_pH^2/(omegas-w_cH) + w_pHe^2/(omegas-w_cHe) + w_pO^2/(omegas-w_cO)
+  diff = rhs - lhs
+  goo = min(abs(diff),wh)
+  f_Lcutoff = omegas[wh]/(2.*!pi)
+
+  ;!p.multi = [0,0,2]
+  ;plot,omegas,lhs
+  ;oplot,omegas,rhs,color=240
+  ;plot,omegas,diff
 
 
 
 	s_o = sqrt(w_ce^2 + w_pe^2)/2./!pi
 
-	cp_params = {R:R,L:L,D:D,S:S,P:P,$
-	A:A,B:B,C:C,F:F,$
-	R_cutoff:f_ro_e,L_cutoff:f_lo_e,P_cutoff:w_pe/2./!pi,S_resonance:s_o,$
-	R_resonance:abs(w_ce)/2./!pi}
 
 
 	;; --------------------------------------------------------------------------
@@ -353,10 +400,13 @@ function cold_plasma_dispersion,epol=epol,$
 	fpHe = w_pHe/2./!pi
 	fpO= w_pO/2./!pi
 
-	fce = abs(w_ce/2./!pi)
+  ;fce = abs(w_ce/2./!pi)
+  fce = w_ce/2./!pi
 	fcH = w_cH/2./!pi
 	fcHe = w_cHe/2./!pi
 	fcO = w_cO/2./!pi
+
+  fuh = sqrt(fce^2 + fpe^2)
 
 	meff = 1/(pH/1. + pHe/4. + pO/16.)
 	flhr = sqrt(fpe^2*fce^2/(fpe^2 + fce^2)*(1/1836./meff))
@@ -368,6 +418,39 @@ function cold_plasma_dispersion,epol=epol,$
 	VA2 = fcH/fpH*3e5                                ;Alternate H+ Alfven vel (km/s)
 	VAe = VA * sqrt(1836.)                           ;electron Alfven vel (km/sec)
 	mepp = (Bo*BnT2BG)^2/8./!pi/dens * erg2joule /e1ev ;characteristic magnetic energy per particle (eV)
+
+
+
+	;X=0 cutoff
+	goo1 = 4*(fpe/fce)^2
+	fx = (fce/2.)*(1 + sqrt(1 + goo1))
+  ;Z=0 cutoff 
+  fz = fx - fce
+  ;Z=infinity resonance (upper oblique resonance)
+  goo1 = sqrt(fuh^4 - 4*(fce*fpe*cos(theta))^2)
+  fzi = (1/sqrt(2.))*sqrt(fuh^2 + goo1)
+
+
+  ;Return values of the cold plasma parameters. Note that these can be used 
+  ;along with Stix Fig. 2-2 (and 2-1) to determine which region (1-13) a wave falls within. 
+  cp_params = {R:R,L:L,D:D,S:S,P:P,$
+    P_S:P/S,$
+    RLminusPS:(R*L - P*S),$
+    A:A,B:B,C:C,F:F,$
+    RL_S:R*L/S,$
+    R_cutoff:f_Rcutoff,$
+    R_cutoff_electrons_only:f_Rcutoff_electrons_only,$
+    L_cutoff:f_Lcutoff,$
+    L_cutoff_electrons_only:f_Lcutoff_electrons_only,$
+    P_cutoff:f_Pcutoff,$
+    P_cutoff_electrons_only:f_Pcutoff_electrons_only,$
+    X_cutoff:fx,$
+    Z_cutoff:fz,$   
+    S_resonance:s_o,$
+    R_resonance:abs(w_ce)/2./!pi,$
+    Z_oblique_resonance:fzi,$
+    fuh_resonance:fuh}
+
 
 
 	;;------------------------------------------------------------------------------------------------
@@ -383,7 +466,7 @@ function cold_plasma_dispersion,epol=epol,$
 
 	;;Calculate Ex,Ey,Ez
 	;;Since I only know epol=Ex/Ey I'll assume that Ey=1 and Ex=epol. Ez will then be related to these.
-	Ex2Ey = epol
+	Ex2Ey = 1/epol   ;use the inverse value b/c Ex should be semimajor axis and Ey semiminor
 	Ez2Ex = (n^2*cos(theta)*sin(theta))/(n^2*sin(theta)^2-P)
 
 
