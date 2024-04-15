@@ -25,15 +25,17 @@ import plasmapy
 from astropy import units as u  
 
 
-Oplus = plasmapy.particles.Particle("O 1+")
-Hplus = plasmapy.particles.Particle("H 1+")
-elec = plasmapy.particles.Particle("electron")
+#Oplus = plasmapy.particles.Particle("O 1+")
+#Hplus = plasmapy.particles.Particle("H 1+")
+#elec = plasmapy.particles.Particle("electron")
 
-me = elec.mass
-mH = Hplus.mass
-mO = Oplus.mass
+#me = elec.mass
+#mH = Hplus.mass
+#mO = Oplus.mass
 
-
+me = 9.1093837e-31  #kg 
+mH = 1.67291244e-27
+mO = 2.65660536e-26
 
 """
 Test to see if high density limit is applicable (fpi^2 >> fce*fci) 
@@ -52,7 +54,11 @@ def flhr_HighDensityLimitTest(ne, Bo):
 lower hybrid frequency in high density limit for single ion species
 """
 def flhr_HighDensityLimit(fce, fci):
-    return [np.sqrt(fce[i]*fci[i]) for i in range(len(fce))]
+    fce = [np.asarray(i) for i in fce]
+    fci = [np.asarray(i) for i in fci]
+
+    
+    return [np.sqrt(fce[i]*fci[i]) for i in range(len(fce))] 
 
 
 
@@ -61,16 +67,29 @@ Lower hybrid frequency (not in high density limit) for fractional percentages of
 """
 def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
 
-    fpe = [plasmapy.formulary.plasma_frequency(i, particle='electron', to_hz=True) for i in ne]
+    ne = [np.asarray(i.value) for i in ne]
+    fce = [np.asarray(i.value) for i in fce]
+    fpe = 8980 * np.sqrt(ne)
+    #nH_ne = [np.asarray(i.value) for i in nH_ne]
+    #nO_ne = [np.asarray(i.value) for i in nO_ne]
 
+    #fce = np.asarray(fce)
+    #fpe = 8980 * np.sqrt(ne)
+    #nH_ne = np.asarray(nH_ne)
+    #nO_ne = np.asarray(nO_ne)
     nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
     nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
-    
-    Meff = [1./((me/ne[i])* ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
 
-    goo = [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
+    #nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
+    #nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
+    #Meff = [1./((me/ne[i])* ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
+    #goo = [np.sqrt((1/Meff[i])*((fce[i]**2*fpe[i]**2.)/(fpe[i]**2 + fce[i]**2))) for i in range(len(fce))] 
+    
+    Meff = [1./((me/ne[i]) * ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
+    goo = [np.sqrt((1/Meff[i])*((fce[i]**2 * fpe[i]**2)/(fpe[i]**2 + fce[i]**2))) for i in range(len(ne))]
+
     return goo
-    #return [np.sqrt((1./Meff[i])*((fce[i]**2.*fpe[i]**2.)/(fpe[i]**2. + fce[i]**2.))) for i in range(len(fce))] 
+
 
 
 
@@ -83,6 +102,7 @@ def flhr_singleion(ni, Bo, species):
     #Kludgy, but if I don't do take the "value" and then reassign the units 
     #the below part doesn't work properly. 
     goo = [plasmapy.formulary.lower_hybrid_frequency(Bo[i].value * u.nT, ni[i].value * u.cm**-3, ion=species,to_hz = True) for i in range(len(ni))]
+    #goo = [plasmapy.formulary.lower_hybrid_frequency(Bo[i], ni[i], ion=species,to_hz = True) for i in range(len(ni))]
     return goo
 
 
@@ -91,25 +111,28 @@ def flhr_singleion(ni, Bo, species):
 if __name__ == '__main__': 
     print("Running as script")
 
-    ne = [17632. * u.cm**-3, 18892. * u.cm**-3]
-    Bo = [51908. * u.nT, 47280 * u.nT]
+    ne = [220058 * u.cm**-3, 246920 * u.cm**-3]
+    Bo = [49375 * u.nT, 47669 * u.nT]
+    #ne = [220058, 246920]
+    #Bo = [49375, 47669]
 
     flhrH = flhr_singleion(ne, Bo, 'H+')
     flhrO = flhr_singleion(ne, Bo, 'O+')
 
 
 
-    fce = [plasmapy.formulary.gyrofrequency(Bo, 'e-', to_hz=True)]
-    fcH = [plasmapy.formulary.gyrofrequency(Bo, 'H+', to_hz=True)]
-    fcO = [plasmapy.formulary.gyrofrequency(Bo, 'O+', to_hz=True)]
+    fce = [plasmapy.formulary.gyrofrequency(i, 'e-', to_hz=True) for i in Bo]
+    fcH = [plasmapy.formulary.gyrofrequency(i, 'H+', to_hz=True) for i in Bo]
+    fcO = [plasmapy.formulary.gyrofrequency(i, 'O+', to_hz=True) for i in Bo]
 
-    flhr = flhr_IonMassFractions(ne, fce, [0.0], [1.0])
+    flhr = flhr_IonMassFractions(ne, fce, [1.0,1.0], [0.0,0.0])
 
     print(flhr, flhrH, flhrO)
 
     #Test high density limit 
-#    flhrHD_tst = flhr_HighDensityLimitTest(ne, Bo)
-#    flhrHD = flhr_HighDensityLimit(fce, fcH)
-#    print(flhrHD_tst, flhrHD)
+    flhrHD_tst = flhr_HighDensityLimitTest(ne, Bo)
+    flhrHD = flhr_HighDensityLimit(fce, fcH)
+    print(flhrHD_tst, flhrHD)
 
 
+    print('h')
