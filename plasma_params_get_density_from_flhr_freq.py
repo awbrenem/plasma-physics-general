@@ -60,11 +60,11 @@ def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
     #Kludge...not sure why units aren't working out, but value is OK
     #Sometimes the density goes to infinity in order to produce the 
     #observed flhr (likely means that you have your fractional mass wrong)
-    for i in range(len(fce)):
-        ne2 = ne[i].value
-        ne[i] = ne2 * u.cm**-3
-        if ne[i] < 0: 
-            ne[i] = np.nan
+    #for i in range(len(fce)):
+    #    ne2 = ne[i].value
+    #    ne[i] = ne2 * u.cm**-3
+    #    if ne[i] < 0: 
+    #        ne[i] = np.nan
     
     return ne
 
