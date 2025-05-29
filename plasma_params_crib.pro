@@ -48,9 +48,9 @@
 ;--------------------------
 B = 2. ;nT
 n = 10. ;cm-3
-Z = 1    ;charge state (number of unmatched e-)
+Z = 1    ;charge state (number of unmatched e-; qs/e)
 muu = 1  ;mi/mp   (atomic mass unit)
-;O+ muu=15
+;O+ muu=16
 ;He+ muu=4
 ;N+ muu =14
 ;Define polytropic index
@@ -119,12 +119,61 @@ Hplus2e_mass = mp/me       ;H+ to electron mass ratio
 ;However, the sqrt() terms are only relevant for inertial Alfven waves
 ;---------------------------------------------------
 
-;Transform from E, B to velocity
-;E=VxB, where E(V/m) = V(m/s) * B(T)
+;*********************************************************************
+;Lorentz transformation (E = 0 = Esc + vxB) of perpendicular VxB to E 	(E=VxB, where E(V/m) = V(m/s) * B(T))
+; ***Note that for a convecting plasma E = 0 and Esc = -vxB
+; B (Teslas) --> units of volts*s/m 
+; v --> units of m/s 
+; --> v*B has units of V/m 
+
 ;**Rule of thumb in ionosphere: 500 mV/m = 10 km/s
-Vsc = 10*1000. ; m/s
-Bo = 50000. ;nT
-E = Vsc * Bo = 0.5 V/m = 500 mV/m
+	;V = 10*1000. ; m/s
+	;Bo = 50000./1e9 ;T
+	;E = V * Bo = 0.5 V/m = 500 mV/m
+
+
+	V = 330. ; m/s
+	Bo = 47700./1e9 ;T
+	E (V/m) = V * Bo	
+
+	
+;NOTE on E/B ratio. dEx/dBy is often used as a proxy for whether a wave is electromagnetic or electrostatic. 
+;Ideally, you'd just measure all the components, but these are rarely available, and so it's more practical to compare the 
+;correlated components of dEx and dBy. 
+;dEx/dBy is related to the relative size of the longitudinal and transverse components. 
+
+;dEx/dBy = sqrt(<dEx^2(w)> / <dBy^2(w)>)
+
+;If this quantity is > c then the wave can be considered electrostatic, though note that this really needs to be compared to theoretical dispersion relation
+;(e.g. certain EM waves can have dEx/dBy > c).
+;***********************************************************************
+
+
+
+
+;------------------
+;Doppler shift plot
+
+;DS for PSP whistlers at:
+;Karbashewski, S., Agapitov, O. V., & Kim, H. (2023). Counter-Streaming Whistlers
+;Collocated with Magnetic Field Inhomogeneities and their Application to
+;Electric Field Measurement Calibration. (Manuscript submitted for publication)
+
+;A&A 656, A24 (2021) https://doi.org/10.1051/0004-6361/202140945 
+;M. Kretzschmar et al. 202
+
+;	Polarization: Lorentz VECTOR transformations from SC (primed) to plama frame given by Feynman+64
+;	Ewpar_SW = Ewpar'
+;	Bwpar_SW = Bwpar'
+;	Ewperp_SW = (Ew' - vxBw')_perp * gama
+;	Bwperp_SW = (Bw' + (vxEw'/c^2))_perp * gama
+
+;	for v << c these reduce to 
+;	Ewperp = (Ew' - vxBw')_perp
+;	Bwperp = Bwperp'
+;------------------
+
+
 
 
 
@@ -158,17 +207,20 @@ flhr = sqrt(fpi*fpi*fce*fci)/sqrt(fce*fci+(fpi^2))   ;Lower Hybrid Res freq (Hz)
 ;--simplification in high density limit
 flhr2 = sqrt(abs(fce)*fci)							 ;Lower Hybrid Res freq (Hz) --> high dens limit - no plasma freq terms (Gurnett 4.4.51)
 ;--Use the next version when multiple ion species are present and high density limit not applicable
-Meff = 1/((me/ne)*sum(n_alpha/m_alpha))				 ;Effective mass for use in fLHR calculation [Shkylar+94; Vavilov+13]
+Meff = 1/((me/ne)*sum(n_alpha/m_alpha))				 ;Effective mass for use in fLHR calculation [Shklyar+94; Vavilov+13]
 flhr3 = sqrt((1/Meff)*((fce^2*fpe^2)/(fpe^2 + fce^2))) ;Lower Hybrid Res freq (Hz) mass resolved
- 												 ;"sum" means the sum over all ion species
+   												     ;"sum" means the sum over all ion species
 ;;flhr = fpi									     ;Lower Hybrid Res freq (Hz) --> low dens limit
 fr = sqrt(flhr^2*((index_ref^2)/(index_ref^2 + (fpe^2/freq^2)))) ;(Shklyar+94; Vavilov+13) Frequency at which whistler mode wave of freq ("freq") will reflect due to inability to propagate below lower hybrid freq
 fuh = sqrt(fpe^2 + fce^2)							 ;Upper hybrid res freq (Hz)
 fz = fce/2. + sqrt((fce/2.)^2 + fpe^2)				 ;Z-mode cutoff freq (Hz) (fz < f < fuh)
 fx = fce/2. + 0.5*sqrt(fce^2 + 4.*fpe^2)             ;X-mode frequency (Hz)
 fl = sqrt(fpe^2 + (fce^2)/4.) - fce/2.				 ;L-mode cutoff freq (Hz) [e.g. Broughton16]
+
+;I DON'T TRUST THESE
 pe = 2.38*sqrt(Te)/(B*BnT2BG)/100./1000.             ;e- thermal gyroradius (km)
 pi = 102*sqrt(muu)*sqrt(Ti)/(B*BnT2BG)/100./1000./Z  ;ion thermal gyroradius (km)
+
 
 ;Note in VA calculations that B is the BACKGROUND (or total) magnetic field in nT
 ;(SEE plasma_parmas_crib_determine_electrostatic_or_electromagnetic.py)
@@ -184,7 +236,7 @@ ion_inertial2 = Va/2./!pi/fci                        ;alternate formulation (km/
 
 ;Since 1 eV = 1.6d-19 Joules, the energy in Joules is e1eV*Energy_eV.
 ;from E = 1/2 m*v^2 (Joules) we then have
-Ve = sqrt(2*e1eV*elec_eV/me)/1000.    ;e- thermal vel (km/s)
+Ve = sqrt(2*e1eV*elec_eV/me)/1000.    ;e- thermal vel (km/s) [Verified by comparison to Scott Boardsen's output]
 Vi = sqrt(2*e1eV*elec_eV/mi)/1000.     ;ion thermal vel (km/s)
 ;e.g. Heelis98 (Ion Drift meter paper) - Electrons/H+ions with temp of 1200 K (0.1 eV) have thermal speeds 
 ;of 4.4 km/s and 190 km/s, roughly. Note that Ve >> e- kinetic velocity in ionosphere.
@@ -210,7 +262,8 @@ pkin = nU*1e-3*(1869.6979 + 0.0161082*TiU) ;kinetic pressure
 
 gendrin_angle = acos(2.*f/fce)/!dtor       ;whistler mode Gendrin angle (approx form)
 res_angle = acos(f/fce)/!dtor					     ;resonance cone angle
-
+f = 5000. 
+fce = 1d6
 
 ;pkin = n*1e-3*(1869.6979 + 0.0161082*Ti) ;kinetic pressure
 
@@ -1338,28 +1391,6 @@ f = fce/2.2
 
 
 
-;------------------
-;Doppler shift plot
-
-;DS for PSP whistlers at:
-;Karbashewski, S., Agapitov, O. V., & Kim, H. (2023). Counter-Streaming Whistlers
-;Collocated with Magnetic Field Inhomogeneities and their Application to
-;Electric Field Measurement Calibration. (Manuscript submitted for publication)
-
-;A&A 656, A24 (2021) https://doi.org/10.1051/0004-6361/202140945 
-;M. Kretzschmar et al. 202
-
-;	Polarization: Lorentz VECTOR transformations from SC (primed) to plama frame given by Feynman+64
-;	Ewpar_SW = Ewpar'
-;	Bwpar_SW = Bwpar'
-;	Ewperp_SW = (Ew' - vxBw')_perp * gama
-;	Bwperp_SW = (Bw' + (vxEw'/c^2))_perp * gama
-
-;	for v << c these reduce to 
-;	Ewperp = (Ew' - vxBw')_perp
-;	Bwperp = Bwperp'
-;------------------
-
 
 
 
@@ -1496,6 +1527,10 @@ print,E_landau_v2
 
         print,E_trans_proton/1000.  ;keV
 
+;Lower hybrid waves can be considered electrostatic if the perp wavelength is less than e- skin depth (Schuck+04: 10.1029/2002JA009673)
+;sdepth = c/we, or kper*sdepth >> 1
+
+
 ;----------------------------------------------------------------------------------------------------------------------------------------
 ;NONRELATIVISTIC CYCLOTRON RES ENERGIES (NOTE: FOR ANYTHING IN THE
 ;VICINITY OF 100 KEV YOU DEFINITELY NEED TO USE RELATIVISTIC EQNS ABOVE
@@ -1612,7 +1647,7 @@ endif
 
 	Eamp2 = 1000.*2.*!pi*freq/k  * BnT/1e9/sin(!dtor*d)   ; in mV/m
 
-	;Calculate phase velocity from this
+	;Calculate phase velocity from this (NOTE: using E/B to calculate this assumes EM wave with Ew, Bw both perp to Bo)
 	Vp = (Eamp2/1000.)/(BnT/1e9)/1000.   ;km/sec
 
 	;Plot E vs d assuming minimal Doppler-shift

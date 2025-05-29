@@ -67,8 +67,16 @@ Lower hybrid frequency (not in high density limit) for fractional percentages of
 """
 def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
 
-    ne = [np.asarray(i.value) for i in ne]
-    fce = [np.asarray(i.value) for i in fce]
+    ne = np.asarray(ne)
+    fce = np.asarray(fce)
+    nH_ne = np.asarray(nH_ne)
+    nO_ne = np.asarray(nO_ne)
+
+    #ne = [np.asarray(i.value) for i in ne]
+    #fce = [np.asarray(i.value) for i in fce]
+    #ne = [np.asarray(i) for i in ne]
+    #fce = [np.asarray(i) for i in fce]
+
     fpe = 8980 * np.sqrt(ne)
     #nH_ne = [np.asarray(i.value) for i in nH_ne]
     #nO_ne = [np.asarray(i.value) for i in nO_ne]
@@ -77,16 +85,22 @@ def flhr_IonMassFractions(ne, fce, nH_ne, nO_ne):
     #fpe = 8980 * np.sqrt(ne)
     #nH_ne = np.asarray(nH_ne)
     #nO_ne = np.asarray(nO_ne)
-    nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
-    nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
+    #nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
+    #nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
+    nH = nH_ne*ne
+    nO = nO_ne*ne
+
 
     #nH = [nH_ne[i]*ne[i] for i in range(len(ne))]
     #nO = [nO_ne[i]*ne[i] for i in range(len(ne))]
     #Meff = [1./((me/ne[i])* ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
     #goo = [np.sqrt((1/Meff[i])*((fce[i]**2*fpe[i]**2.)/(fpe[i]**2 + fce[i]**2))) for i in range(len(fce))] 
     
-    Meff = [1./((me/ne[i]) * ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
-    goo = [np.sqrt((1/Meff[i])*((fce[i]**2 * fpe[i]**2)/(fpe[i]**2 + fce[i]**2))) for i in range(len(ne))]
+    #Meff = [1./((me/ne[i]) * ((nH[i]/mH) + (nO[i]/mO))) for i in range(len(ne))]
+    #goo = [np.sqrt((1/Meff[i])*((fce[i]**2 * fpe[i]**2)/(fpe[i]**2 + fce[i]**2))) for i in range(len(ne))]
+
+    Meff = 1./((me/ne) * ((nH/mH) + (nO/mO)))
+    goo = np.sqrt((1/Meff)*((fce**2 * fpe**2)/(fpe**2 + fce**2)))
 
     return goo
 
@@ -125,7 +139,7 @@ if __name__ == '__main__':
     fcH = [plasmapy.formulary.gyrofrequency(i, 'H+', to_hz=True) for i in Bo]
     fcO = [plasmapy.formulary.gyrofrequency(i, 'O+', to_hz=True) for i in Bo]
 
-    flhr = flhr_IonMassFractions(ne, fce, [1.0,1.0], [0.0,0.0])
+    flhr = flhr_IonMassFractions(ne, fce, [0.0,0.0], [1.0,1.0])
 
     print(flhr, flhrH, flhrO)
 
