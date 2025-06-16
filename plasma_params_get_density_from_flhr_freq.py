@@ -21,19 +21,10 @@ the input lower hybrid frequency. NaN values are returned.
 
 import numpy as np
 import plasmapy
-from astropy.constants import e
-from astropy import units as u  
 
-
-Oplus = plasmapy.particles.Particle("O 1+")
-Hplus = plasmapy.particles.Particle("H 1+")
-elec = plasmapy.particles.Particle("electron")
-
-mH = Hplus.mass
-mO = Oplus.mass
-me = elec.mass
-
-
+mH = 1.6729e-27  #kg
+mO = 2.6566e-26  
+me = 9.1094e-31 
 
 """
 Density based on lower hybrid frequency composed of fractional percentages of H+ and O+
@@ -49,6 +40,9 @@ def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
 
     ne = [n1[i]/d1[i] for i in range(len(fce))]
 
+    ne = np.asarray(ne)
+    bad = np.where(ne < 0)
+    ne[bad] = np.nan
 
 
     """ Alternative calculation - gives same result 
@@ -57,14 +51,6 @@ def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
     ne2 = [num[i]/(den[i]-1) for i in range(len(fce))]
     """
 
-    #Kludge...not sure why units aren't working out, but value is OK
-    #Sometimes the density goes to infinity in order to produce the 
-    #observed flhr (likely means that you have your fractional mass wrong)
-    #for i in range(len(fce)):
-    #    ne2 = ne[i].value
-    #    ne[i] = ne2 * u.cm**-3
-    #    if ne[i] < 0: 
-    #        ne[i] = np.nan
     
     return ne
 
@@ -74,55 +60,37 @@ Density based on single ion species
 """
 def dens_singleion(flh, Bo, species):
 
-    fce = [plasmapy.formulary.gyrofrequency(i, particle='electron', to_hz=True) for i in Bo]
-    fci = [plasmapy.formulary.gyrofrequency(i, particle=species, to_hz=True) for i in Bo]
+    fce = [28*i for i in Bo]
 
-    ion = plasmapy.particles.Particle(species)
-    gama = np.sqrt(ion.mass/me)
+    Z = 1    #charge state (number of unmatched e-; qs/e)
+
+    #atomic mass unit (mi/mp)
+    if species == 'H+':
+        muu = 1 
+    elif species == 'O+':
+        muu = 16
+    elif species == 'He+':
+        muu = 4
+    elif species == 'N+':
+        muu = 14
+
+    Hplus2e_mass = mH/me       #H+ to electron mass ratio
+
+    fci = [i*Z/(Hplus2e_mass*muu) for i in fce]
+
+
+    gama = np.sqrt(muu*mH/me)
 
     num = [fce[i]*fci[i]*(gama/8980.)**2 for i in range(len(fce))]
     den = [fce[i]*fci[i]/(flh[i]**2) for i in range(len(fce))]
     ne = [num[i]/(den[i] - 1) for i in range(len(fce))]
 
-
-    #Kludge...not sure why units aren't working out, but value is OK
-    #Sometimes the density goes to infinity in order to produce the 
-    #observed flhr (likely means that you have your fractional mass wrong)
-    for i in range(len(fce)):
-        ne2 = ne[i].value
-        ne[i] = ne2 * u.cm**-3
-        if ne[i] < 0: 
-            ne[i] = np.nan
+    ne = np.asarray(ne)
+    bad = np.where(ne < 0)
+    ne[bad] = np.nan
 
     return ne
 
-
-"""
-Run as script
-"""
-if __name__ == '__main__': 
-    print("Running as script")
-    flh = [7600.] * u.Hz
-    Bo = [45500.] * u.nT
-    nH_ne = [0.0] * u.dimensionless_unscaled 
-    nO_ne = [1.0] * u.dimensionless_unscaled
-
-
-    fce = [plasmapy.formulary.gyrofrequency(i, particle='electron', to_hz=True) for i in Bo]
-    fcH = [plasmapy.formulary.gyrofrequency(i, particle='H+', to_hz=True) for i in Bo]
-    fcO = [plasmapy.formulary.gyrofrequency(i, particle='O+', to_hz=True) for i in Bo]
-
-    ne1 = dens_IonMassFractions(flh, fce, nH_ne, nO_ne)
-    ne2 = dens_singleion(flh, Bo, 'H+')
-    ne3 = dens_singleion(flh, Bo, 'O+')
-
-    print(ne1, ne2, ne3)
-
-
-
-
-
-    print('done')
 
 
 
