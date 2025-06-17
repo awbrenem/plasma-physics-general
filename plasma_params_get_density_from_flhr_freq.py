@@ -22,17 +22,64 @@ the input lower hybrid frequency. NaN values are returned.
 import numpy as np
 import plasmapy
 
+#The following are the species in the IRI 2016 model
 mH = 1.6729e-27  #kg
-mO = 2.6566e-26  
+mO = 16*mH
+mN = 14*mH
+mHe = 4*mH
+mO2 = 32*mH
+mNO2 = (14+32)*mH
+
 me = 9.1094e-31 
 
 """
-Density based on lower hybrid frequency composed of fractional percentages of H+ and O+
+Density based on lower hybrid frequency composed of fractional percentages of ion species 
+NOTE: ions are those from the IRI 2016 model.
+
+flh = lower hybrid freq (Hz)
+fce = electron cyclotron freq (Hz)
+
+nH_ne = fraction of ions that are H+
+nO_ne = fraction of ions that are O+
+nN_ne = fraction of ions that are N+
+
+The following are only important at low altitudes (e.g. < 200 km)
+nHe_ne = fraction of ions that are He+
+nO2_ne = fraction of ions that are O2+
+nNO2_ne = fraction of ions that are NO2+
+
+(NOTE: that since O+ and N+ have nearly the same weight (16*mH vs 14*mH), modifying their factional percentages relative to each other
+doesn't change the density much)
+
 """
-def dens_IonMassFractions(flh, fce, nH_ne, nO_ne):
+def dens_IonMassFractions(flh, fce, nH_ne=[1], nO_ne=[0], nN_ne=[0], nHe_ne=[0], nO2_ne=[0], nNO2_ne=[0]):
+
+    nH_ne = np.asarray(nH_ne)
+    nO_ne = np.asarray(nO_ne)
+    nN_ne = np.asarray(nN_ne)
+    nHe_ne = np.asarray(nHe_ne)
+    nO2_ne = np.asarray(nO2_ne)
+    nNO2_ne = np.asarray(nNO2_ne)
 
 
-    M = [1./((me/mH)*nH_ne[i] + (me/mO)*nO_ne[i]) for i in range(len(fce))]
+    #Make sure all input arrays are of same length
+    maxlen = len(max([[nH_ne],[nO_ne],[nN_ne],[nHe_ne],[nO2_ne],[nNO2_ne]], key=len)[0])
+    if len(nH_ne) != maxlen:
+        nH_ne = np.zeros(maxlen)
+    if len(nO_ne) != maxlen:
+        nO_ne = np.zeros(maxlen)
+    if len(nN_ne) != maxlen:
+        nN_ne = np.zeros(maxlen)
+    if len(nHe_ne) != maxlen:
+        nHe_ne = np.zeros(maxlen)
+    if len(nO2_ne) != maxlen:
+        nO2_ne = np.zeros(maxlen)
+    if len(nNO2_ne) != maxlen:
+        nNO2_ne = np.zeros(maxlen)
+
+
+
+    M = [1./((me/mH)*nH_ne[i] + (me/mO)*nO_ne[i] + (me/mN)*nN_ne[i] + (me/mHe)*nHe_ne[i] + (me/mO2)*nO2_ne[i] + (me/mNO2)*nNO2_ne[i]) for i in range(len(fce))]
     C = 8980.**2
 
     n1 = [-M[i]*fce[i]**2 * flh[i]**2 for i in range(len(fce))]
