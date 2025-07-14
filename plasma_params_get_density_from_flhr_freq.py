@@ -52,14 +52,34 @@ nNO2_ne = fraction of ions that are NO2+
 doesn't change the density much)
 
 """
-def dens_IonMassFractions(flh, fce, nH_ne=[1], nO_ne=[0], nN_ne=[0], nHe_ne=[0], nO2_ne=[0], nNO2_ne=[0]):
+def dens_IonMassFractions(flh, fce, nH_ne=1, nO_ne=0, nN_ne=0, nHe_ne=0, nO2_ne=0, nNO2_ne=0):
 
+    flh = np.asarray(flh)
+    fce = np.asarray(fce)
     nH_ne = np.asarray(nH_ne)
     nO_ne = np.asarray(nO_ne)
     nN_ne = np.asarray(nN_ne)
     nHe_ne = np.asarray(nHe_ne)
     nO2_ne = np.asarray(nO2_ne)
     nNO2_ne = np.asarray(nNO2_ne)
+
+    #Turn single values into arrays with single value
+    if not np.shape(flh):
+        flh = [flh]
+    if not np.shape(fce):
+        fce = [fce]
+    if not np.shape(nH_ne):
+        nH_ne = [nH_ne]
+    if not np.shape(nO_ne):
+        nO_ne = [nO_ne]
+    if not np.shape(nN_ne):
+        nN_ne = [nN_ne]
+    if not np.shape(nHe_ne):
+        nHe_ne = [nHe_ne]
+    if not np.shape(nO2_ne):
+        nO2_ne = [nO2_ne]
+    if not np.shape(nNO2_ne):
+        nNO2_ne = [nNO2_ne]
 
 
     #Make sure all input arrays are of same length
@@ -98,7 +118,7 @@ def dens_IonMassFractions(flh, fce, nH_ne=[1], nO_ne=[0], nN_ne=[0], nHe_ne=[0],
     ne2 = [num[i]/(den[i]-1) for i in range(len(fce))]
     """
 
-    
+
     return ne
 
 
@@ -106,6 +126,12 @@ def dens_IonMassFractions(flh, fce, nH_ne=[1], nO_ne=[0], nN_ne=[0], nHe_ne=[0],
 Density based on single ion species
 """
 def dens_singleion(flh, Bo, species):
+
+    if not np.shape(Bo):
+        Bo = [Bo]
+    if not np.shape(flh):
+        flh = [flh]
+
 
     fce = [28*i for i in Bo]
 
