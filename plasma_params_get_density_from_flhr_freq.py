@@ -20,7 +20,7 @@ the input lower hybrid frequency. NaN values are returned.
 
 
 import numpy as np
-import plasmapy
+#import plasmapy
 
 #The following are the species in the IRI 2016 model
 mH = 1.6729e-27  #kg
